@@ -1,0 +1,18 @@
+domain: identity-manager.io
+layout:
+- go.kubebuilder.io/v3
+plugins:
+  manifests.sdk.operatorframework.io/v2: {}
+  scorecard.sdk.operatorframework.io/v2: {}
+projectName: identity-manager
+repo: github.com/invisibl-cloud/identity-manager
+resources:
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: identity-manager.io
+  kind: WorkloadIdentity
+  path: github.com/invisibl-cloud/identity-manager/api/v1alpha1
+  version: v1alpha1
+version: "3"
