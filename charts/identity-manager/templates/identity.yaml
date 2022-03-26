@@ -1,0 +1,26 @@
+{{- if .Values.provider.azure.enabled }}
+
+---
+apiVersion: "aadpodidentity.k8s.io/v1"
+kind: AzureIdentity
+metadata:
+  name: {{ include "identity-manager.fullname" . }}
+  labels:
+    {{- include "identity-manager.labels" . | nindent 4 }}
+  annotations:
+    aadpodidentity.k8s.io/Behavior: namespaced
+spec:
+  type: {{ default 0 .Values.provider.azure.type }}
+  resourceID: {{ .Values.provider.azure.resourceID }}
+  clientID: {{ .Values.provider.azure.clientID }}
+
+---
+apiVersion: "aadpodidentity.k8s.io/v1"
+kind: AzureIdentityBinding
+metadata:
+  name: {{ include "identity-manager.fullname" . }}
+spec:
+  azureIdentity: {{ include "identity-manager.fullname" . }}
+  selector: {{ include "identity-manager.aadpodidbinding" . }}
+
+{{- end }}

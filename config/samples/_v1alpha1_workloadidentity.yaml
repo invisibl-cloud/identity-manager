@@ -1,0 +1,6 @@
+apiVersion: identity-manager.io/v1alpha1
+kind: WorkloadIdentity
+metadata:
+  name: workloadidentity-sample
+spec:
+  # TODO(user): Add fields here

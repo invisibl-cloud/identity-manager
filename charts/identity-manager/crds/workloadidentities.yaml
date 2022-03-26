@@ -1,0 +1,420 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.8.0
+  name: workloadidentities.identity-manager.io
+spec:
+  group: identity-manager.io
+  names:
+    kind: WorkloadIdentity
+    listKind: WorkloadIdentityList
+    plural: workloadidentities
+    singular: workloadidentity
+  scope: Namespaced
+  versions:
+  - name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: WorkloadIdentity is the Schema for the workloadidentities API
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: WorkloadIdentitySpec defines the desired state of WorkloadIdentity
+            properties:
+              aws:
+                description: AWS WorkloadIdentity
+                properties:
+                  assumeRolePolicy:
+                    description: AssumeRolePolicy of the Role
+                    type: string
+                  inlinePolicies:
+                    additionalProperties:
+                      type: string
+                    description: InlinePolicies of the Role
+                    type: object
+                  maxSessionDuration:
+                    description: MaxSessionDuration of the Role
+                    format: int64
+                    type: integer
+                  path:
+                    default: /
+                    description: Path of the Role
+                    type: string
+                  pods:
+                    description: Pods to be managed
+                    items:
+                      properties:
+                        matchExpressions:
+                          description: matchExpressions is a list of label selector
+                            requirements. The requirements are ANDed.
+                          items:
+                            description: A label selector requirement is a selector
+                              that contains values, a key, and an operator that relates
+                              the key and values.
+                            properties:
+                              key:
+                                description: key is the label key that the selector
+                                  applies to.
+                                type: string
+                              operator:
+                                description: operator represents a key's relationship
+                                  to a set of values. Valid operators are In, NotIn,
+                                  Exists and DoesNotExist.
+                                type: string
+                              values:
+                                description: values is an array of string values.
+                                  If the operator is In or NotIn, the values array
+                                  must be non-empty. If the operator is Exists or
+                                  DoesNotExist, the values array must be empty. This
+                                  array is replaced during a strategic merge patch.
+                                items:
+                                  type: string
+                                type: array
+                            required:
+                            - key
+                            - operator
+                            type: object
+                          type: array
+                        matchLabels:
+                          additionalProperties:
+                            type: string
+                          description: matchLabels is a map of {key,value} pairs.
+                            A single {key,value} in the matchLabels map is equivalent
+                            to an element of matchExpressions, whose key field is
+                            "key", the operator is "In", and the values array contains
+                            only "value". The requirements are ANDed.
+                          type: object
+                        namespace:
+                          description: Namespace of the Pod
+                          type: string
+                      type: object
+                    type: array
+                  policies:
+                    description: Policies of the Role
+                    items:
+                      type: string
+                    type: array
+                  serviceAccounts:
+                    description: ServiceAccounts to be managed
+                    items:
+                      description: ServiceAccount to create service account.
+                      properties:
+                        Annotations:
+                          additionalProperties:
+                            type: string
+                          description: Annotations to be added on ServiceAccount
+                          type: object
+                        action:
+                          description: Action to be perform on ServiceAccount
+                          enum:
+                          - Update
+                          - Create
+                          type: string
+                        name:
+                          description: Name of the ServiceAccount
+                          type: string
+                        namespace:
+                          description: Namespace of the ServiceAccount
+                          type: string
+                      type: object
+                    type: array
+                required:
+                - assumeRolePolicy
+                type: object
+              azure:
+                description: Azure WorkloadIdentity
+                properties:
+                  identity:
+                    description: Identity of the WorkloadIdentity
+                    properties:
+                      apiVersion:
+                        description: APIVersion of the identity
+                        type: string
+                      kind:
+                        description: Kind of the identity
+                        type: string
+                      metadata:
+                        description: Metadata of the identity
+                        properties:
+                          annotations:
+                            additionalProperties:
+                              type: string
+                            description: Annotations of the Resource
+                            type: object
+                          labels:
+                            additionalProperties:
+                              type: string
+                            description: Labels of the Resource
+                            type: object
+                          name:
+                            description: Name of the Resource
+                            type: string
+                          namespace:
+                            description: Namespace of the Resource
+                            type: string
+                        type: object
+                      spec:
+                        description: Spec of the identity
+                        properties:
+                          type:
+                            description: Type of the identity
+                            type: integer
+                        type: object
+                    type: object
+                  identityBinding:
+                    description: IdentityBinding of the WorkloadIdentity
+                    properties:
+                      apiVersion:
+                        description: APIVersion of the IdentityBinding
+                        type: string
+                      kind:
+                        description: Kind of the IdentityBinding
+                        type: string
+                      metadata:
+                        description: Metadata of the IdentityBinding
+                        properties:
+                          annotations:
+                            additionalProperties:
+                              type: string
+                            description: Annotations of the Resource
+                            type: object
+                          labels:
+                            additionalProperties:
+                              type: string
+                            description: Labels of the Resource
+                            type: object
+                          name:
+                            description: Name of the Resource
+                            type: string
+                          namespace:
+                            description: Namespace of the Resource
+                            type: string
+                        type: object
+                      spec:
+                        description: Spec of the IdentityBinding
+                        properties:
+                          selector:
+                            description: Selector of the IdentityBinding
+                            type: string
+                        type: object
+                    type: object
+                  roleAssignments:
+                    additionalProperties:
+                      properties:
+                        role:
+                          description: Role of the role assignment
+                          type: string
+                        scope:
+                          description: Scope of the role assignment
+                          type: string
+                      required:
+                      - role
+                      type: object
+                    description: RoleAssignments of the WorkloadIdentity
+                    type: object
+                  roleDefinitions:
+                    description: RoleDefinitions is a list of role definitions
+                    items:
+                      properties:
+                        assignableScopes:
+                          description: AssignableScopes is a list of assignable scopes
+                          items:
+                            type: string
+                          type: array
+                        description:
+                          description: Description of the role definition
+                          type: string
+                        id:
+                          description: ID of the role definition (this will be used
+                            to generate internal UUID for role)
+                          type: string
+                        permissions:
+                          description: Permissions of the role definition
+                          items:
+                            properties:
+                              actions:
+                                description: Actions is a list of actions
+                                items:
+                                  type: string
+                                type: array
+                              dataActions:
+                                description: DataActions is a list of data actions
+                                items:
+                                  type: string
+                                type: array
+                              notActions:
+                                description: NotActions is a list of not actions
+                                items:
+                                  type: string
+                                type: array
+                              notDataActions:
+                                description: NotDataActions is a list of not data
+                                  actions
+                                items:
+                                  type: string
+                                type: array
+                            type: object
+                          type: array
+                        roleName:
+                          description: RoleName of the role definition
+                          type: string
+                        roleType:
+                          description: RoleType of the role definition
+                          type: string
+                      required:
+                      - id
+                      - permissions
+                      - roleName
+                      type: object
+                    type: array
+                type: object
+              credentials:
+                description: Credentials to manage the WorkloadIdentity
+                properties:
+                  properties:
+                    additionalProperties:
+                      type: string
+                    description: Properties indicates extra properties of credentials
+                    type: object
+                  secretRef:
+                    description: SecretRef to fetch the credentials
+                    properties:
+                      name:
+                        description: Name of the secret.
+                        type: string
+                      namespace:
+                        description: Namespace of the secret.
+                        type: string
+                    required:
+                    - name
+                    type: object
+                  source:
+                    description: Source of the credentials
+                    enum:
+                    - Secret
+                    type: string
+                type: object
+              description:
+                description: Desc of the WorkloadIdentity
+                type: string
+              name:
+                description: Name of the WorkloadIdentity
+                type: string
+              provider:
+                description: Provider of the WorkloadIdentity
+                enum:
+                - AWS
+                - Azure
+                type: string
+              writeToSecretRef:
+                description: WriteToSecretRef is a reference to a secret
+                properties:
+                  name:
+                    description: Name of the secret
+                    type: string
+                  namespace:
+                    description: Namespace of the secret
+                    type: string
+                  templateData:
+                    additionalProperties:
+                      type: string
+                    description: TemplateData is a template for the data to be written
+                      to the secret
+                    type: object
+                required:
+                - name
+                - templateData
+                type: object
+            required:
+            - provider
+            type: object
+          status:
+            description: WorkloadIdentityStatus defines the observed state of WorkloadIdentity
+            properties:
+              conditions:
+                description: Conditions of the resource.
+                items:
+                  description: A Condition that may apply to a resource.
+                  properties:
+                    lastTransitionTime:
+                      description: LastTransitionTime is the last time this condition
+                        transitioned from one status to another.
+                      format: date-time
+                      type: string
+                    message:
+                      description: A Message containing details about this condition's
+                        last transition from one status to another, if any.
+                      type: string
+                    reason:
+                      description: A Reason for this condition's last transition from
+                        one status to another.
+                      type: string
+                    status:
+                      description: Status of this condition; is it currently True,
+                        False, or Unknown?
+                      type: string
+                    type:
+                      description: Type of this condition. At most one of each condition
+                        type may apply to a resource at any point in time.
+                      type: string
+                  required:
+                  - lastTransitionTime
+                  - reason
+                  - status
+                  - type
+                  type: object
+                type: array
+              externalResources:
+                description: External Resources managed bu the Identity
+                items:
+                  properties:
+                    id:
+                      description: ID of the external resource
+                      type: string
+                    type:
+                      description: Type of the external resource
+                      type: string
+                  type: object
+                type: array
+              id:
+                description: ID of the Identity
+                type: string
+              name:
+                description: Name of the Identity
+                type: string
+              resources:
+                description: Resources managed by the Identity
+                items:
+                  properties:
+                    apiVersion:
+                      description: APIVersion of the resource
+                      type: string
+                    kind:
+                      description: Kind of the resource
+                      type: string
+                    name:
+                      description: Name of the resource
+                      type: string
+                    namespace:
+                      description: Namespace of the resource
+                      type: string
+                  type: object
+                type: array
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
