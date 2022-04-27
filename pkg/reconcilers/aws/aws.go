@@ -202,6 +202,9 @@ func (r *AWSRoleReconciler) doServiceAccountReconcile(ctx context.Context, saSpe
 
 	// update service account
 	if existingSA.Annotations[eksServiceAccountAnnotationKey] != arn {
+		if len(existingSA.Annotations) == 0 {
+			existingSA.Annotations = map[string]string{}
+		}
 		existingSA.Annotations[eksServiceAccountAnnotationKey] = arn
 		err = r.Update(ctx, existingSA)
 		if err != nil {
