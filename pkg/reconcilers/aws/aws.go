@@ -51,7 +51,7 @@ func (r *AWSRoleReconciler) Prepare(ctx context.Context) error {
 		return err
 	}
 	r.iamClient = iam.New(&conf, r.res)
-	return nil
+	return r.iamClient.Prepare(ctx)
 }
 
 func (r *AWSRoleReconciler) getConfig(ctx context.Context) (conf awsx.Config, err error) {

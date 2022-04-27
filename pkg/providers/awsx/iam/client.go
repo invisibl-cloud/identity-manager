@@ -63,21 +63,24 @@ func (i *Client) roleName() string {
 	return roleName
 }
 
-// Reconcile IAM Role
-func (i *Client) CreateOrUpdate(ctx context.Context) (*RoleStatus, error) {
+func (i *Client) Prepare(ctx context.Context) error {
 	sess, err := awsx.NewSession(*i.config)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	i.sts = sts.New(sess)
 	callerIdentity, err := i.sts.GetCallerIdentity(&sts.GetCallerIdentityInput{})
 	if err != nil {
-		return nil, err
+		return err
 	}
 	i.accountID = aws.StringValue(callerIdentity.Account)
 	i.iam = iam.New(sess)
+	return nil
+}
 
+// Reconcile IAM Role
+func (i *Client) CreateOrUpdate(ctx context.Context) (*RoleStatus, error) {
 	prevRoleName := i.role.Status.Name
 	newRoleName := i.roleName()
 	if prevRoleName != "" && prevRoleName != newRoleName {
