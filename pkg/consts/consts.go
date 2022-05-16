@@ -2,8 +2,8 @@ package consts
 
 const (
 	FinalizerKey    = "identity-manager.io/finalizer"
-	DeletePolicyKey = ""
-	OrphanValue     = ""
+	DeletePolicyKey = "identity-manager.io/delete-policy"
+	OrphanValue     = "Orphan"
 )
 
 const Finalizer = "identity-manager.io/finalizer"

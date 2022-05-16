@@ -51,7 +51,7 @@ func (r *AWSRoleReconciler) Prepare(ctx context.Context) error {
 		return err
 	}
 	r.iamClient = iam.New(&conf, r.res)
-	return nil
+	return r.iamClient.Prepare(ctx)
 }
 
 func (r *AWSRoleReconciler) getConfig(ctx context.Context) (conf awsx.Config, err error) {
@@ -202,6 +202,9 @@ func (r *AWSRoleReconciler) doServiceAccountReconcile(ctx context.Context, saSpe
 
 	// update service account
 	if existingSA.Annotations[eksServiceAccountAnnotationKey] != arn {
+		if len(existingSA.Annotations) == 0 {
+			existingSA.Annotations = map[string]string{}
+		}
 		existingSA.Annotations[eksServiceAccountAnnotationKey] = arn
 		err = r.Update(ctx, existingSA)
 		if err != nil {
