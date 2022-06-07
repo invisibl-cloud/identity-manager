@@ -8,6 +8,7 @@ import (
 	"github.com/Azure/go-autorest/autorest/azure/auth"
 )
 
+// GetEnvironment returns azure.Environment based on Config's Environment
 func (c *Config) GetEnvironment() (azure.Environment, error) {
 	if c.Environment == "" {
 		return azure.PublicCloud, nil
@@ -15,6 +16,7 @@ func (c *Config) GetEnvironment() (azure.Environment, error) {
 	return azure.EnvironmentFromName(c.Environment)
 }
 
+// GetAuthorizer returns the autorest.Authorizer based on the available settings
 func (c *Config) GetAuthorizer() (autorest.Authorizer, error) {
 
 	//1. Client Credentials

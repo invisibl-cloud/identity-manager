@@ -16,8 +16,12 @@ const (
 	UserAgent = "identity-manager-azure-client"
 )
 
+// Option is the function syntax definition that is
+// used as a generic return type for config options
 type Option func(*Client) error
 
+// WithConfigMapFunc executes fn and returns Option with
+// fn's returned map value
 func WithConfigMapFunc(fn func() (map[string]interface{}, error)) Option {
 	return func(x *Client) error {
 		data, err := fn()
@@ -28,6 +32,8 @@ func WithConfigMapFunc(fn func() (map[string]interface{}, error)) Option {
 	}
 }
 
+// WithConfigData expects data and returns
+// Option with a populated map
 func WithConfigData(data []byte) Option {
 	return func(x *Client) error {
 		m := map[string]interface{}{}
@@ -39,6 +45,8 @@ func WithConfigData(data []byte) Option {
 	}
 }
 
+// WithEnv populates env data to Client
+// and returns Option
 func WithEnv() Option {
 	return func(x *Client) error {
 		if x.config == nil {
@@ -57,6 +65,8 @@ func WithEnv() Option {
 	}
 }
 
+// WithConfigMap expects map[string]interface
+// and returns Option
 func WithConfigMap(m map[string]interface{}) Option {
 	return func(x *Client) error {
 		// if region found, set it in location
@@ -74,6 +84,8 @@ func WithConfigMap(m map[string]interface{}) Option {
 	}
 }
 
+// WithConfig expects Config and
+// returns Option
 func WithConfig(c *Config) Option {
 	return func(x *Client) error {
 		x.config = c
@@ -81,6 +93,7 @@ func WithConfig(c *Config) Option {
 	}
 }
 
+// New initializes Client with multiple Option
 func New(opts ...Option) (*Client, error) {
 	c := &Client{}
 	for _, opt := range opts {
@@ -96,30 +109,20 @@ func New(opts ...Option) (*Client, error) {
 	return c, nil
 }
 
+// Client is the definition of the Client object
 type Client struct {
 	config     *Config
 	authorizer autorest.Authorizer
 }
 
+// GetAuthorizer returns client's authorizer
 func (x *Client) GetAuthorizer() autorest.Authorizer {
 	return x.authorizer
 }
 
+// GetConfig returns client's config
 func (x *Client) GetConfig() *Config {
 	return x.config
-}
-
-var envConfig = Config{
-	Environment:         os.Getenv("AZURE_ENVIRONMENT"),
-	TenantID:            os.Getenv("AZURE_TENANT_ID"),
-	SubscriptionID:      os.Getenv("AZURE_SUBSCRIPTION_ID"),
-	ClientID:            os.Getenv("AZURE_CLIENT_ID"),
-	ClientSecret:        os.Getenv("AZURE_CLIENT_SECRET"),
-	Username:            os.Getenv("AZURE_USERNAME"),
-	Password:            os.Getenv("AZURE_PASSWORD"),
-	CertificatePath:     os.Getenv("AZURE_CERTIFICATE_PATH"),
-	CertificatePassword: os.Getenv("AZURE_CERTIFICATE_PASSWORD"),
-	ADResource:          os.Getenv("AZURE_AD_RESOURCE"),
 }
 
 // Config - simple aws session config
@@ -163,6 +166,8 @@ type Config struct {
 	//cloudName              string = "AzurePublicCloud"
 }
 
+// DefaultConfigMap is the config map with
+// default settings
 var DefaultConfigMap = map[string]string{
 	"environment":                    azure.PublicCloud.Name,
 	"activeDirectoryEndpointUrl":     azure.PublicCloud.ActiveDirectoryEndpoint,
@@ -172,6 +177,7 @@ var DefaultConfigMap = map[string]string{
 	"managementEndpointUrl":          azure.PublicCloud.ServiceManagementEndpoint,
 }
 
+// ToUUIDString expects uuid and returns string
 func ToUUIDString(u *uuid.UUID) string {
 	if u == nil {
 		return ""
@@ -179,6 +185,8 @@ func ToUUIDString(u *uuid.UUID) string {
 	return u.String()
 }
 
+// ToString returns underlying string of s
+// It returns "" if s is nil
 func ToString(s *string) string {
 	if s == nil {
 		return ""
@@ -186,6 +194,7 @@ func ToString(s *string) string {
 	return *s
 }
 
+// ToStringPtr returns pointer to s
 func ToStringPtr(s string) *string {
 	return &s
 }

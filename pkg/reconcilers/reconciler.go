@@ -2,7 +2,8 @@ package reconcilers
 
 import (
 	"context"
-	"math/rand"
+	"crypto/rand"
+	"math/big"
 	"time"
 
 	"github.com/go-logr/logr"
@@ -16,13 +17,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
-func init() {
-	rand.Seed(time.Now().UnixNano())
-}
-
+// Reconcile calls the Reconciler
 func Reconcile(ctx context.Context, base *ReconcilerBase, req ctrl.Request, res types.Resource, rec types.Reconciler) (ctrl.Result, error) {
 	log := base.Log(ctx)
-	//log.Info("reconciling")
 	// Fetch the instance
 	err := base.Client().Get(ctx, req.NamespacedName, res)
 	if err != nil {
@@ -65,6 +62,7 @@ type reconciler struct {
 	statusCopy interface{}
 }
 
+// Reconcile implements Reconciler
 func (r *reconciler) Reconcile(ctx context.Context) (ctrl.Result, error) {
 	r.specCopy = r.res.GetSpecCopy()
 	r.statusCopy = r.res.GetStatusCopy()
@@ -140,8 +138,11 @@ func (r *reconciler) getRequeueAfter(requeueAfter time.Duration) time.Duration {
 	}
 	min := 30
 	max := 120
-	secs := rand.Intn(max-min) + min
-	return time.Duration(secs) * time.Second
+	secs, err := rand.Int(rand.Reader, big.NewInt(int64(max)))
+	if err != nil {
+		return time.Duration(min) * time.Second
+	}
+	return time.Duration(secs.Int64()) * time.Second
 }
 
 func (r *reconciler) isResourceUpdated(spec interface{}) bool {
@@ -159,7 +160,6 @@ func (r *reconciler) doReturn(ctx context.Context, requeueAfter int64) (ctrl.Res
 
 	// always check status first.
 	if !equality.Semantic.DeepEqual(r.statusCopy, r.res.GetStatus()) {
-		//r.log.Info("status updated", "res", res.GetStatus())
 		err := r.base.Client().Status().Update(ctx, r.res)
 		if err != nil {
 			r.log.Info("error updating resource status", "err", err)
@@ -167,7 +167,6 @@ func (r *reconciler) doReturn(ctx context.Context, requeueAfter int64) (ctrl.Res
 	}
 	// then spec
 	if r.isResourceUpdated(r.res.GetSpec()) {
-		//r.log.Info("resource updated", "res", res.GetStatus())
 		err := r.base.Client().Update(ctx, r.res)
 		if err != nil {
 			r.log.Info("error updating resource", "err", err)
@@ -175,10 +174,8 @@ func (r *reconciler) doReturn(ctx context.Context, requeueAfter int64) (ctrl.Res
 	}
 	if canRequeue {
 		requeueDuration := r.getRequeueAfter(time.Duration(requeueAfter) * time.Second)
-		//r.log.Info("requeue after", "secs", requeueDuration.Seconds())
 		return ctrl.Result{RequeueAfter: requeueDuration}, nil
 	}
-	//r.log.Info("reconciled")
 	return ctrl.Result{}, nil
 }
 

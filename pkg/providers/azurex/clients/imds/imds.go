@@ -17,6 +17,7 @@ const (
 	timeout = 80 * time.Second
 )
 
+// Check performs sanity check on Azure client
 func Check(ctx context.Context, clientID string) {
 	log := log.FromContext(ctx)
 	resourceEndpoint := os.Getenv("AZURE_RESOURCE_ENDPOINT")
@@ -46,6 +47,8 @@ func Check(ctx context.Context, clientID string) {
 	}
 }
 
+// CurlIMDSMetadataInstanceEndpoint performs get request to
+// IMDS metadata instance endpoint and returns the result
 func CurlIMDSMetadataInstanceEndpoint() (string, error) {
 	client := &http.Client{
 		Timeout: timeout,
@@ -71,6 +74,7 @@ func CurlIMDSMetadataInstanceEndpoint() (string, error) {
 	//klog.Infof(`curl -H Metadata:true "http://169.254.169.254/metadata/instance?api-version=2017-08-01": %s`, body)
 }
 
+// GetTokenFromIMDS get service principal token for the resource
 func GetTokenFromIMDS(resourceName string) (*adal.Token, error) {
 	managedIdentityOpts := &adal.ManagedIdentityOptions{}
 	spt, err := adal.NewServicePrincipalTokenFromManagedIdentity(resourceName, managedIdentityOpts)
@@ -93,6 +97,8 @@ func GetTokenFromIMDS(resourceName string) (*adal.Token, error) {
 	return &token, nil
 }
 
+// GetTokenFromIMDSWithUserAssignedID receives resource and identity client ID
+// and returns the service principal token
 func GetTokenFromIMDSWithUserAssignedID(resourceName string, identityClientID string) (*adal.Token, error) {
 	managedIdentityOpts := &adal.ManagedIdentityOptions{ClientID: identityClientID}
 	spt, err := adal.NewServicePrincipalTokenFromManagedIdentity(resourceName, managedIdentityOpts)

@@ -18,6 +18,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"os"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
@@ -38,18 +39,21 @@ import (
 )
 
 var (
-	scheme   = runtime.NewScheme()
-	setupLog = ctrl.Log.WithName("setup")
+	version    = "0.0.0"
+	commitHash = "HEAD"
+	buildDate  = "1970-01-01T00:00:00Z"
+	scheme     = runtime.NewScheme()
+	setupLog   = ctrl.Log.WithName("setup")
 )
 
 func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
-
 	utilruntime.Must(identitymanageriov1alpha1.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }
 
 func main() {
+	fmt.Println("Version:", version, "GitCommit:", commitHash, "BuildDate:", buildDate)
 	var metricsAddr string
 	var enableLeaderElection bool
 	var probeAddr string

@@ -3,7 +3,7 @@
 # To re-generate a bundle for another specific version without changing the standard setup, you can:
 # - use the VERSION as arg of the bundle target (e.g make bundle VERSION=0.0.2)
 # - use environment variables to overwrite this value (e.g export VERSION=0.0.2)
-VERSION ?= 0.0.1
+VERSION ?= 1.0.0
 
 # CHANNELS define the bundle channels used in the bundle.
 # Add a new line here if you would like to change its default config. (E.g CHANNELS = "candidate,fast,stable")
@@ -49,7 +49,7 @@ endif
 # Image URL to use all building/pushing image targets
 IMG ?= controller:latest
 # ENVTEST_K8S_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary.
-ENVTEST_K8S_VERSION = 1.23
+ENVTEST_K8S_VERSION = 1.21
 
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
@@ -104,7 +104,11 @@ vet: ## Run go vet against code.
 
 .PHONY: test
 test: manifests generate fmt vet envtest ## Run tests.
-	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) -p path)" go test ./... -coverprofile cover.out
+	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) -p path)" go test ./... -v -coverprofile cover.out
+
+.PHONY: lint
+lint: ## Run linter.
+	golangci-lint run
 
 ##@ Build
 
@@ -237,3 +241,9 @@ lgen: manifests generate
 	mkdir -p manifests
 	rm -rf manifests/*
 	kustomize build config/default -o manifests
+
+BUILD_DATE ?= $(shell date -u +%Y-%m-%dT%H:%M:%SZ)
+COMMIT_HASH ?= $(shell git rev-parse HEAD)
+
+release-binary:
+	go build -o identity-manager -v -ldflags "-w -X main.version=$(VERSION) -X main.buildDate=$(BUILD_DATE) -X main.commitHash=$(COMMIT_HASH) -extldflags -static"
