@@ -1,0 +1,116 @@
+linters:
+  # Disable all linters.
+  # Default: false
+  disable-all: true
+  # Enable specific linter
+  # https://golangci-lint.run/usage/linters/#enabled-by-default-linters
+
+  enable:
+    - deadcode
+    - revive
+    - deadcode
+    - errcheck
+    - gosimple
+    - govet
+    - ineffassign
+    - staticcheck
+    - structcheck
+    - typecheck
+    - unused
+    - varcheck
+    - gosec
+    - gocyclo
+
+linters-settings:
+  gocyclo:
+    # Minimal code complexity to report.
+    # Default: 30 (but we recommend 10-20)
+    min-complexity: 20
+
+  revive:
+    ignore-generated-header: false
+    severity: warning
+    confidence: 0.8
+    rules:
+    - name: exported
+      severity: warning
+      arguments:
+          - "checkPrivateReceivers"
+          - "sayRepetitiveInsteadOfStutters"
+          - "disableStutteringCheck"
+      disabled: false
+    - name: package-comments
+      severity: warning
+      disabled: false
+    - name: blank-imports
+      severity: warning
+      disabled: false
+    - name: context-as-argument
+      severity: error
+      disabled: false
+    - name: context-keys-type
+      severity: error
+      disabled: false
+    - name: dot-imports
+      severity: error
+      disabled: false
+    - name: error-return
+      severity: error
+      disabled: false
+    - name: error-strings
+      severity: error
+      disabled: false
+    - name: error-naming
+      severity: error
+      disabled: false
+    - name: if-return
+      severity: error
+      disabled: false
+    - name: increment-decrement
+      severity: error
+      disabled: false
+    - name: var-naming
+      severity: error
+      disabled: false
+    - name: var-declaration
+      severity: warning
+      disabled: false
+    - name: range
+      severity: warning
+      disabled: false
+    - name: receiver-naming
+      severity: error
+      disabled: false
+    - name: time-naming
+      severity: error
+      disabled: false
+    - name: unexported-return
+      severity: error
+      disabled: false
+    - name: indent-error-flow
+      severity: warning
+      disabled: false
+    - name: errorf
+      severity: error
+      disabled: false
+    - name: empty-block
+      severity: error
+      disabled: false
+    - name: superfluous-else
+      severity: error
+      disabled: false
+    - name: unreachable-code
+      severity: error
+      disabled: false
+    - name: redefines-builtin-id
+      severity: error
+      disabled: false
+issues:
+  include:
+  - EXC0002
+  - EXC0011
+  - EXC0012
+  - EXC0013
+  - EXC0014
+  - EXC0015
+

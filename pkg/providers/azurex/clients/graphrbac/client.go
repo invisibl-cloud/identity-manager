@@ -15,12 +15,14 @@ import (
 
 var uuidRE = regexp.MustCompile("^[a-z0-9]{8}-[a-z0-9]{4}-[1-5][a-z0-9]{3}-[a-z0-9]{4}-[a-z0-9]{12}$")
 
+// Client is the RBAC client definition
 type Client struct {
 	*azurex.Client
 	resourceGroup string
 	location      string
 }
 
+// New returns the RBAC client
 func New(p *azurex.Client) *Client {
 	return &Client{
 		Client:        p,
@@ -29,23 +31,33 @@ func New(p *azurex.Client) *Client {
 	}
 }
 
-func getRoleDefinitionsClient(p *azurex.Client) authorization.RoleDefinitionsClient {
+func getRoleDefinitionsClient(p *azurex.Client) (authorization.RoleDefinitionsClient, error) {
 	c := authorization.NewRoleDefinitionsClient(p.GetConfig().SubscriptionID)
 	c.Authorizer = p.GetAuthorizer()
-	c.AddToUserAgent(azurex.UserAgent)
-	return c
+	err := c.AddToUserAgent(azurex.UserAgent)
+	if err != nil {
+		return authorization.RoleDefinitionsClient{}, err
+	}
+	return c, nil
 }
 
-func getRoleAssignmentsClient(p *azurex.Client) authorization.RoleAssignmentsClient {
+func getRoleAssignmentsClient(p *azurex.Client) (authorization.RoleAssignmentsClient, error) {
 	c := authorization.NewRoleAssignmentsClient(p.GetConfig().SubscriptionID)
 	c.Authorizer = p.GetAuthorizer()
-	c.AddToUserAgent(azurex.UserAgent)
-	return c
+	err := c.AddToUserAgent(azurex.UserAgent)
+	if err != nil {
+		return authorization.RoleAssignmentsClient{}, err
+	}
+	return c, nil
 }
 
+// CreateOrUpdateRoleDefinition creates or updates the role definition
 func (c Client) CreateOrUpdateRoleDefinition(ctx context.Context, id string, scope string, prop authorization.RoleDefinitionProperties) error {
-	rdc := getRoleDefinitionsClient(c.Client)
-	scope, err := c.ensureScope(scope)
+	rdc, err := getRoleDefinitionsClient(c.Client)
+	if err != nil {
+		return err
+	}
+	scope, err = c.ensureScope(scope)
 	if err != nil {
 		return err
 	}
@@ -55,9 +67,13 @@ func (c Client) CreateOrUpdateRoleDefinition(ctx context.Context, id string, sco
 	return err
 }
 
+// DeleteRoleDefinition deletes role definition
 func (c Client) DeleteRoleDefinition(ctx context.Context, scope, id string) error {
-	rdc := getRoleDefinitionsClient(c.Client)
-	scope, err := c.ensureScope(scope)
+	rdc, err := getRoleDefinitionsClient(c.Client)
+	if err != nil {
+		return err
+	}
+	scope, err = c.ensureScope(scope)
 	if err != nil {
 		return err
 	}
@@ -65,9 +81,13 @@ func (c Client) DeleteRoleDefinition(ctx context.Context, scope, id string) erro
 	return err
 }
 
-// get all role assignments for the principle
+// ListRoleAssignments gets all role assignments for the principal
 func (c Client) ListRoleAssignments(ctx context.Context, principalID string) ([]*authorization.RoleAssignment, error) {
-	rac := getRoleAssignmentsClient(c.Client)
+	rac, err := getRoleAssignmentsClient(c.Client)
+	if err != nil {
+		return nil, err
+	}
+
 	list := []*authorization.RoleAssignment{}
 	filter := fmt.Sprintf("principalId eq '%s'", principalID)
 	for l, err := rac.ListComplete(ctx, filter); l.NotDone(); err = l.NextWithContext(ctx) {
@@ -80,6 +100,7 @@ func (c Client) ListRoleAssignments(ctx context.Context, principalID string) ([]
 	return list, nil
 }
 
+// GetRoleDefintionIDFromName gets the role definition ID from the role name
 func (c Client) GetRoleDefintionIDFromName(ctx context.Context, name string, scope string) (string, error) {
 	if strings.HasPrefix(name, "/") {
 		return name, nil
@@ -91,7 +112,10 @@ func (c Client) GetRoleDefintionIDFromName(ctx context.Context, name string, sco
 	if err != nil {
 		return "", err
 	}
-	rdc := getRoleDefinitionsClient(c.Client)
+	rdc, err := getRoleDefinitionsClient(c.Client)
+	if err != nil {
+		return "", err
+	}
 	l, err := rdc.List(ctx, scope, fmt.Sprintf("roleName eq '%s'", name))
 	if err != nil {
 		return "", err
@@ -107,18 +131,28 @@ func (c Client) GetRoleDefintionIDFromName(ctx context.Context, name string, sco
 	}
 }
 
+// DeleteRoleAssignment deletes the role assingnment
 func (c Client) DeleteRoleAssignment(ctx context.Context, id string) error {
-	rac := getRoleAssignmentsClient(c.Client)
-	_, err := rac.DeleteByID(ctx, id)
+	rac, err := getRoleAssignmentsClient(c.Client)
+	if err != nil {
+		return err
+	}
+
+	_, err = rac.DeleteByID(ctx, id)
 	return err
 }
 
+// CreateRoleAssignment creates role assignment
 func (c Client) CreateRoleAssignment(ctx context.Context, id string, principalID, roleDefinitionID, scope string) (string, error) {
 	scope, err := c.ensureScope(scope)
 	if err != nil {
 		return "", err
 	}
-	rac := getRoleAssignmentsClient(c.Client)
+	rac, err := getRoleAssignmentsClient(c.Client)
+	if err != nil {
+		return "", err
+	}
+
 	p := authorization.RoleAssignmentCreateParameters{
 		RoleAssignmentProperties: &authorization.RoleAssignmentProperties{
 			RoleDefinitionID: azurex.ToStringPtr(roleDefinitionID),

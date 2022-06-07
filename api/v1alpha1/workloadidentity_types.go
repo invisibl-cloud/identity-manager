@@ -46,6 +46,7 @@ type WorkloadIdentitySpec struct {
 	WriteToSecretRef *WriteToSecretRef `json:"writeToSecretRef,omitempty"`
 }
 
+// WriteToSecretRef is a reference to a secret
 type WriteToSecretRef struct {
 	// Name of the secret
 	// +required
@@ -58,7 +59,7 @@ type WriteToSecretRef struct {
 	TemplateData map[string]string `json:"templateData"`
 }
 
-// Provider of the WorkloadIdentity
+// Provider defines the cloud provider of the WorkloadIdentity
 type Provider string
 
 const (
@@ -78,6 +79,7 @@ const (
 	CredentialsSourceSecret CredentialsSource = "Secret"
 )
 
+// Credentials defines the credentials of the cloud provider
 type Credentials struct {
 	// Source of the credentials
 	// +kubebuilder:validation:Enum=Secret
@@ -91,7 +93,7 @@ type Credentials struct {
 	Properties map[string]string `json:"properties,omitempty"`
 }
 
-// SecretRef - secret reference
+// SecretRef defines the reference to the secret
 type SecretRef struct {
 	// Namespace of the secret.
 	// +optional
@@ -101,6 +103,7 @@ type SecretRef struct {
 	Name string `json:"name"`
 }
 
+// WorkloadIdentityAzure is the Provider spec for ProviderAzure
 type WorkloadIdentityAzure struct {
 	// RoleDefinitions is a list of role definitions
 	// +optional
@@ -116,6 +119,7 @@ type WorkloadIdentityAzure struct {
 	IdentityBinding *AzureIdentityBinding `json:"identityBinding,omitempty"`
 }
 
+// RoleDefinition is the definition for a Role
 type RoleDefinition struct {
 	// ID of the role definition (this will be used to generate internal UUID for role)
 	// +required
@@ -137,6 +141,7 @@ type RoleDefinition struct {
 	Permissions []RolePermission `json:"permissions"`
 }
 
+// RolePermission defines the permissions of a Role
 type RolePermission struct {
 	// Actions is a list of actions
 	// +optional
@@ -152,6 +157,7 @@ type RolePermission struct {
 	NotDataActions []string `json:"notDataActions,omitempty"`
 }
 
+// AzureIdentity is the definition of Azure's Identity
 type AzureIdentity struct {
 	// APIVersion of the identity
 	// +optional
@@ -167,6 +173,7 @@ type AzureIdentity struct {
 	Spec *AzureIdentitySpec `json:"spec,omitempty"`
 }
 
+// AzureIdentityBinding is the definition of Azure Identity Binding
 type AzureIdentityBinding struct {
 	// APIVersion of the IdentityBinding
 	// +optional
@@ -182,18 +189,21 @@ type AzureIdentityBinding struct {
 	Spec *AzureIdentityBindingSpec `json:"spec,omitempty"`
 }
 
+// AzureIdentitySpec defines the spec of the Identity
 type AzureIdentitySpec struct {
 	// Type of the identity
 	// +optional
 	Type int `json:"type,omitempty"`
 }
 
+// AzureIdentityBindingSpec defines the spec of the Identity Binding
 type AzureIdentityBindingSpec struct {
 	// Selector of the IdentityBinding
 	// +optional
 	Selector string `json:"selector,omitempty"`
 }
 
+// RoleAssignment defines the role assignment
 type RoleAssignment struct {
 	// Role of the role assignment
 	// +required
@@ -203,6 +213,7 @@ type RoleAssignment struct {
 	Scope string `json:"scope,omitempty"`
 }
 
+// WorkloadIdentityAWS defines the spec for AWS Provider
 type WorkloadIdentityAWS struct {
 	// Path of the Role
 	// +optional
@@ -228,6 +239,7 @@ type WorkloadIdentityAWS struct {
 	Pods []*AwsRoleSpecPod `json:"pods,omitempty"`
 }
 
+// AwsRoleSpecPod defines the AWS's role spec pod
 type AwsRoleSpecPod struct {
 	metav1.LabelSelector `json:",inline"`
 	// Namespace of the Pod
@@ -247,7 +259,7 @@ const (
 	ServiceAccountActionDefault ServiceAccountAction = ""
 )
 
-// ServiceAccount to create service account.
+// ServiceAccount defines the service account's metadata
 type ServiceAccount struct {
 	// Action to be perform on ServiceAccount
 	// +kubebuilder:validation:Enum=Update;Create
@@ -263,6 +275,7 @@ type ServiceAccount struct {
 	Annotations map[string]string `json:"Annotations,omitempty"`
 }
 
+// Resource is the definition of the kubernetes resource
 type Resource struct {
 	// APIVersion of the resource
 	// +optional
@@ -278,6 +291,7 @@ type Resource struct {
 	Namespace string `json:"namespace,omitempty"`
 }
 
+// ExternalResource is the external resource's definition
 type ExternalResource struct {
 	// ID of the external resource
 	// +optional
@@ -329,6 +343,7 @@ func init() {
 	SchemeBuilder.Register(&WorkloadIdentity{}, &WorkloadIdentityList{})
 }
 
+// Metadata defines kubernetes resource's metadata
 type Metadata struct {
 	// Name of the Resource
 	// +optional
@@ -344,22 +359,27 @@ type Metadata struct {
 	Annotations map[string]string `json:"annotations,omitempty"`
 }
 
+// GetSpec returns spec of WorkloadIdentity
 func (r *WorkloadIdentity) GetSpec() interface{} {
 	return &r.Spec
 }
 
+// GetStatus returns status of WorkloadIdentity
 func (r *WorkloadIdentity) GetStatus() interface{} {
 	return &r.Status
 }
 
+// GetSpecCopy returns spec's copy of WorkloadIdentity
 func (r *WorkloadIdentity) GetSpecCopy() interface{} {
 	return r.Spec.DeepCopy()
 }
 
+// GetStatusCopy returns status's copy of WorkloadIdentity
 func (r *WorkloadIdentity) GetStatusCopy() interface{} {
 	return r.Status.DeepCopy()
 }
 
+// GetConditionedStatus returns condition status of WorkloadIdentity
 func (r *WorkloadIdentity) GetConditionedStatus() *ConditionedStatus {
 	return &r.Status.ConditionedStatus
 }

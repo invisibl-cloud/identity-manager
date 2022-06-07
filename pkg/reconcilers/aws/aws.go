@@ -5,9 +5,12 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/aws/aws-sdk-go/service/iam"
+	"github.com/aws/aws-sdk-go/service/sts"
+
 	"github.com/invisibl-cloud/identity-manager/api/v1alpha1"
 	"github.com/invisibl-cloud/identity-manager/pkg/providers/awsx"
-	"github.com/invisibl-cloud/identity-manager/pkg/providers/awsx/iam"
+	iamc "github.com/invisibl-cloud/identity-manager/pkg/providers/awsx/iam"
 	"github.com/invisibl-cloud/identity-manager/pkg/reconcilers"
 	"github.com/invisibl-cloud/identity-manager/pkg/util"
 	corev1 "k8s.io/api/core/v1"
@@ -19,6 +22,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+// DefaultDuration is the duration used when no
+// specific duration is needed
 var DefaultDuration = time.Duration(60) * time.Second
 
 const eksServiceAccountAnnotationKey = "eks.amazonaws.com/role-arn"
@@ -26,35 +31,49 @@ const roleLabelKey = "identity-manager.io/name"
 const managedByLabelKey = "identity-manager.io"
 const managedByValueKey = "managed"
 
-// Reconciler
-type AWSRoleReconciler struct {
+// RoleReconciler is the struct that holds the
+// required fields that are need to reconcile
+type RoleReconciler struct {
 	client.Client
 	scheme *runtime.Scheme
 	res    *v1alpha1.WorkloadIdentity
 	// internal
-	iamClient *iam.Client
+	iamClient *iamc.Client
 }
 
-func NewAWSRoleReconciler(base *reconcilers.ReconcilerBase, res *v1alpha1.WorkloadIdentity) *AWSRoleReconciler {
-	return &AWSRoleReconciler{
+// NewRoleReconciler expectes reconciler base and workload identity resource
+// and returns a new RoleReconciler object
+func NewRoleReconciler(base *reconcilers.ReconcilerBase, res *v1alpha1.WorkloadIdentity) *RoleReconciler {
+	return &RoleReconciler{
 		Client: base.Client(),
 		scheme: base.Scheme(),
 		res:    res,
 	}
 }
 
-// Initialize creates new RoleClient
-func (r *AWSRoleReconciler) Prepare(ctx context.Context) error {
+// Prepare initialize creates new IAMClient
+func (r *RoleReconciler) Prepare(ctx context.Context) error {
 	conf, err := r.getConfig(ctx)
 	if err != nil {
-		//r.log.Error(err, "Failed to create AwsRole creds config")
 		return err
 	}
-	r.iamClient = iam.New(&conf, r.res)
-	return r.iamClient.Prepare(ctx)
+	sess, err := awsx.NewSession(conf)
+	if err != nil {
+		return err
+	}
+
+	iamC := iam.New(sess)
+	stsC := sts.New(sess)
+
+	iamClient, err := iamc.New(iamC, stsC, r.res)
+	if err != nil {
+		return err
+	}
+	r.iamClient = iamClient
+	return nil
 }
 
-func (r *AWSRoleReconciler) getConfig(ctx context.Context) (conf awsx.Config, err error) {
+func (r *RoleReconciler) getConfig(ctx context.Context) (conf awsx.Config, err error) {
 	creds := r.res.Spec.Credentials
 	if creds == nil {
 		return
@@ -81,7 +100,8 @@ func (r *AWSRoleReconciler) getConfig(ctx context.Context) (conf awsx.Config, er
 	return
 }
 
-func (r *AWSRoleReconciler) Reconcile(ctx context.Context) error {
+// Reconcile performs Reconcilation
+func (r *RoleReconciler) Reconcile(ctx context.Context) error {
 	// reconcile IAM Role
 	err := r.doIAMRoleReconcile(ctx)
 	if err != nil {
@@ -96,10 +116,9 @@ func (r *AWSRoleReconciler) Reconcile(ctx context.Context) error {
 	return r.doActions(ctx)
 }
 
-func (r *AWSRoleReconciler) doIAMRoleReconcile(ctx context.Context) error {
+func (r *RoleReconciler) doIAMRoleReconcile(ctx context.Context) error {
 	status, err := r.iamClient.CreateOrUpdate(ctx)
 	if err != nil {
-		//r.log.Error(err, "Failed to reconcile AwsRole.")
 		return err
 	}
 	if status != nil && status.Name != "" && status.ARN != "" &&
@@ -110,7 +129,8 @@ func (r *AWSRoleReconciler) doIAMRoleReconcile(ctx context.Context) error {
 	return nil
 }
 
-func (r *AWSRoleReconciler) Finalize(ctx context.Context) error {
+// Finalize is the implementation of Finalizer
+func (r *RoleReconciler) Finalize(ctx context.Context) error {
 	err := r.iamClient.Delete(ctx)
 	if err != nil {
 		return err
@@ -118,7 +138,7 @@ func (r *AWSRoleReconciler) Finalize(ctx context.Context) error {
 	return nil
 }
 
-func (r *AWSRoleReconciler) doActions(ctx context.Context) error {
+func (r *RoleReconciler) doActions(ctx context.Context) error {
 	// reconcile serviceaccount
 	for _, sa := range r.res.Spec.AWS.ServiceAccounts {
 		_, err := r.doServiceAccountReconcile(ctx, sa)
@@ -126,8 +146,6 @@ func (r *AWSRoleReconciler) doActions(ctx context.Context) error {
 			return err
 		}
 	}
-
-	// TODO: make sure all serviceaccounts has annotations?
 
 	// do actions
 	for _, p := range r.res.Spec.AWS.Pods {
@@ -139,7 +157,7 @@ func (r *AWSRoleReconciler) doActions(ctx context.Context) error {
 	return nil
 }
 
-func (r *AWSRoleReconciler) doServiceAccountReconcile(ctx context.Context, saSpec *v1alpha1.ServiceAccount) (ctrl.Result, error) {
+func (r *RoleReconciler) doServiceAccountReconcile(ctx context.Context, saSpec *v1alpha1.ServiceAccount) (ctrl.Result, error) {
 	// do nothing if no action
 	if saSpec.Action == v1alpha1.ServiceAccountActionDefault {
 		return ctrl.Result{}, nil
@@ -163,36 +181,25 @@ func (r *AWSRoleReconciler) doServiceAccountReconcile(ctx context.Context, saSpe
 		if isNotFound {
 			// if need to create and its not found. create one.
 			// Define a new ServiceAccount
-			sa := r.newServiceAccount(saName, saNamespace)
-			//r.log.Info("Creating a new ServiceAccount", "Namespace", sa.Namespace, "Name", sa.Name)
+			sa, err := r.newServiceAccount(saName, saNamespace)
+			if err != nil {
+				return ctrl.Result{}, err
+			}
 			err = r.Create(ctx, sa)
 			if err != nil {
-				//r.log.Error(err, "Failed to create new ServiceAccount", "Namespace", sa.Namespace, "Name", sa.Name)
 				return ctrl.Result{}, err
 			}
 			// ServiceAccount created successfully - return and requeue
 			return ctrl.Result{Requeue: true}, nil
 		}
-		// TODO: If action:create but sa already found?
+		// else
+		return ctrl.Result{}, fmt.Errorf("unable to create serviceaccount: serviceaccount already exists")
+
 	case v1alpha1.ServiceAccountActionUpdate:
 		if isNotFound {
 			return ctrl.Result{}, fmt.Errorf("missing serviceaccount, cannot update")
 		}
 	}
-
-	/*
-		// delete sa only if its created & managed by this controller.
-		if existingSA.Labels[managedByLabelKey] == managedByValueKey {
-			// delete service account.
-			err = r.Delete(r.ctx, existingSA)
-			if err != nil {
-				r.log.Error(err, "Failed to delete ServiceAccount", "Namespace", saNamespace, "Name", saName)
-				return ctrl.Result{}, err
-			}
-			// ServiceAccount deleted successfully - return and requeue
-			return ctrl.Result{Requeue: true}, nil
-		}
-	*/
 
 	// wait till Role ARN is created.
 	arn := r.res.Status.ID
@@ -201,6 +208,10 @@ func (r *AWSRoleReconciler) doServiceAccountReconcile(ctx context.Context, saSpe
 	}
 
 	// update service account
+	if existingSA.Annotations == nil {
+		existingSA.Annotations = make(map[string]string)
+	}
+
 	if existingSA.Annotations[eksServiceAccountAnnotationKey] != arn {
 		if len(existingSA.Annotations) == 0 {
 			existingSA.Annotations = map[string]string{}
@@ -208,7 +219,6 @@ func (r *AWSRoleReconciler) doServiceAccountReconcile(ctx context.Context, saSpe
 		existingSA.Annotations[eksServiceAccountAnnotationKey] = arn
 		err = r.Update(ctx, existingSA)
 		if err != nil {
-			//r.log.Error(err, "Failed to update ServiceAccount")
 			return ctrl.Result{}, err
 		}
 	}
@@ -216,7 +226,7 @@ func (r *AWSRoleReconciler) doServiceAccountReconcile(ctx context.Context, saSpe
 	return ctrl.Result{}, nil
 }
 
-func (r *AWSRoleReconciler) restartPods(ctx context.Context, p *v1alpha1.AwsRoleSpecPod, arn string) error {
+func (r *RoleReconciler) restartPods(ctx context.Context, p *v1alpha1.AwsRoleSpecPod, arn string) error {
 	pods := &corev1.PodList{}
 	err := r.List(ctx, pods,
 		client.InNamespace(util.DefaultString(p.Namespace, r.res.Namespace)),
@@ -225,7 +235,7 @@ func (r *AWSRoleReconciler) restartPods(ctx context.Context, p *v1alpha1.AwsRole
 	if err != nil {
 		return err
 	}
-	for _, pod := range pods.Items {
+	for i, pod := range pods.Items {
 		count := 0
 		for _, c := range pod.Spec.Containers {
 			for _, env := range c.Env {
@@ -234,31 +244,32 @@ func (r *AWSRoleReconciler) restartPods(ctx context.Context, p *v1alpha1.AwsRole
 				}
 			}
 		}
-		found := count > 0 // TODO: count == len(pod.Spec.Containers) ??
-		if !found {
-			//r.log.Info("deleting pod", "pod", pod.Name, "namespace", pod.Namespace)
-			err = r.Delete(ctx, &pod)
-			if err != nil {
-				//r.log.Info("error deleting pod", "pod", pod.Name, "error", err)
-			} else {
-				// requeue??
-				// return nil
-			}
+
+		// if there are no containers with with aws role arn env, delete the pod
+		// TODO: support rolling restart instead of delete
+		if count == 0 {
+			// ignore error
+			_ = r.Delete(ctx, &pods.Items[i])
+			// requeue for else?
 		}
 	}
 	return nil
 }
 
-func (r *AWSRoleReconciler) newServiceAccount(saName string, saNamespace string) *corev1.ServiceAccount {
+func (r *RoleReconciler) newServiceAccount(saName string, saNamespace string) (*corev1.ServiceAccount, error) {
 	sa := &corev1.ServiceAccount{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      saName,
-			Namespace: saNamespace,
-			Labels:    map[string]string{managedByLabelKey: managedByValueKey, roleLabelKey: r.res.Name},
-			//Annotations: map[string]string{eksServiceAccountAnnotationKey: m.Status.ARN},
+			Name:        saName,
+			Namespace:   saNamespace,
+			Labels:      map[string]string{managedByLabelKey: managedByValueKey, roleLabelKey: r.res.Name},
+			Annotations: map[string]string{eksServiceAccountAnnotationKey: r.res.Status.ID},
 		},
 	}
 	// Set AwsRole instance as the owner and controller (for gc)
-	ctrl.SetControllerReference(r.res, sa, r.scheme)
-	return sa
+	err := ctrl.SetControllerReference(r.res, sa, r.scheme)
+	if err != nil {
+		return nil, err
+	}
+
+	return sa, nil
 }
