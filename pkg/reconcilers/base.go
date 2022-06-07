@@ -12,6 +12,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
+// ReconcilerBase defines the base reconciler struct
 type ReconcilerBase struct {
 	name       string
 	scheme     *runtime.Scheme
@@ -21,6 +22,7 @@ type ReconcilerBase struct {
 	apireader  client.Reader
 }
 
+// NewForManager expects name and manager.Manager and returns *ReconcilerBase
 func NewForManager(name string, mgr manager.Manager) *ReconcilerBase {
 	return &ReconcilerBase{
 		name:       name,
@@ -32,28 +34,22 @@ func NewForManager(name string, mgr manager.Manager) *ReconcilerBase {
 	}
 }
 
-func (w *ReconcilerBase) Name() string {
-	return w.name
+// Name returns the Name of the ReconcilerBase
+func (r *ReconcilerBase) Name() string {
+	return r.name
 }
 
-func (w *ReconcilerBase) Log(ctx context.Context) logr.Logger {
+// Log returns the Logger of the ReconcilerBase
+func (r *ReconcilerBase) Log(ctx context.Context) logr.Logger {
 	return log.FromContext(ctx)
 }
 
-func (w *ReconcilerBase) Scheme() *runtime.Scheme {
-	return w.scheme
-}
-
-func (w *ReconcilerBase) Client() client.Client {
-	return w.client
-}
-
-// GetClient returns the underlying client
-func (r *ReconcilerBase) GetClient() client.Client {
-	return r.client
-}
-
-// GetScheme returns the scheme
-func (r *ReconcilerBase) GetScheme() *runtime.Scheme {
+// Scheme returns the Scheme of the ReconcilerBase
+func (r *ReconcilerBase) Scheme() *runtime.Scheme {
 	return r.scheme
+}
+
+// Client returns the Client of the ReconcilerBase
+func (r *ReconcilerBase) Client() client.Client {
+	return r.client
 }

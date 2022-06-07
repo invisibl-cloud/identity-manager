@@ -8,6 +8,8 @@ import (
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/credentials/stscreds"
 	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/iam"
+	"github.com/aws/aws-sdk-go/service/sts"
 )
 
 const (
@@ -16,6 +18,7 @@ const (
 	// AccessKeyIDName - aws access key id name
 	AccessKeyIDName = "aws_access_key_id"
 	// SecretAccessKeyName - aws secret access key name
+	// #nosec
 	SecretAccessKeyName = "aws_secret_access_key"
 	// RoleArnName - role arn name
 	RoleArnName = "role_arn"
@@ -23,6 +26,8 @@ const (
 	ExternalIDName = "external_id"
 )
 
+// NewConfig expects the map of config data and returns
+// the Config object
 func NewConfig(m map[string][]byte) Config {
 	cfg := Config{}
 	if val, ok := m[RegionName]; ok {
@@ -43,6 +48,7 @@ func NewConfig(m map[string][]byte) Config {
 	return cfg
 }
 
+// NewSession expects Config and returns the *session.Session object
 func NewSession(conf Config) (*session.Session, error) {
 	// convert to aws config
 	cfg := aws.NewConfig()
@@ -104,4 +110,26 @@ func CheckError(err error, codes ...string) (bool, bool) {
 		return true, false
 	}
 	return false, false
+}
+
+// STS is the interface for the STS API calls
+type STS interface {
+	GetCallerIdentity(*sts.GetCallerIdentityInput) (*sts.GetCallerIdentityOutput, error)
+}
+
+// IAM is the interface for the IAM API calls
+type IAM interface {
+	GetRole(*iam.GetRoleInput) (*iam.GetRoleOutput, error)
+	CreateRole(*iam.CreateRoleInput) (*iam.CreateRoleOutput, error)
+	DeleteRole(*iam.DeleteRoleInput) (*iam.DeleteRoleOutput, error)
+	UpdateRole(*iam.UpdateRoleInput) (*iam.UpdateRoleOutput, error)
+	UpdateRoleDescription(*iam.UpdateRoleDescriptionInput) (*iam.UpdateRoleDescriptionOutput, error)
+
+	ListRolePoliciesPages(*iam.ListRolePoliciesInput, func(*iam.ListRolePoliciesOutput, bool) bool) error
+	ListAttachedRolePoliciesPages(*iam.ListAttachedRolePoliciesInput, func(*iam.ListAttachedRolePoliciesOutput, bool) bool) error
+	DeleteRolePolicy(*iam.DeleteRolePolicyInput) (*iam.DeleteRolePolicyOutput, error)
+	DetachRolePolicy(*iam.DetachRolePolicyInput) (*iam.DetachRolePolicyOutput, error)
+	UpdateAssumeRolePolicy(*iam.UpdateAssumeRolePolicyInput) (*iam.UpdateAssumeRolePolicyOutput, error)
+	AttachRolePolicy(*iam.AttachRolePolicyInput) (*iam.AttachRolePolicyOutput, error)
+	PutRolePolicy(*iam.PutRolePolicyInput) (*iam.PutRolePolicyOutput, error)
 }

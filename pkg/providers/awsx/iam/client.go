@@ -24,20 +24,28 @@ type RoleStatus struct {
 	NeedsSync bool
 }
 
-func New(config *awsx.Config, role *v1alpha1.WorkloadIdentity) *Client {
-	return &Client{
-		config: config,
-		role:   role,
-	}
-}
-
 // Client provides an interface with interacting with AWS
 type Client struct {
-	config    *awsx.Config
-	iam       *iam.IAM
-	sts       *sts.STS
+	iam       awsx.IAM
+	sts       awsx.STS
 	role      *v1alpha1.WorkloadIdentity
 	accountID string
+}
+
+// New expects wrapped iam client, wrapped sts client, workload identity and
+// returns them by packing them together
+func New(iamClient awsx.IAM, stsClient awsx.STS, role *v1alpha1.WorkloadIdentity) (*Client, error) {
+	callerIdentity, err := stsClient.GetCallerIdentity(&sts.GetCallerIdentityInput{})
+	if err != nil {
+		return nil, err
+	}
+
+	return &Client{
+		iam:       iamClient,
+		sts:       stsClient,
+		role:      role,
+		accountID: aws.StringValue(callerIdentity.Account),
+	}, nil
 }
 
 func (i *Client) internalRoleName() string {
@@ -53,9 +61,7 @@ func (i *Client) roleName() string {
 	if strings.HasSuffix(roleName, "-") { // prefix based
 		roleName = roleName + i.internalRoleName()
 	}
-	//if strings.Contains(roleName, "{{") { // pattern based
-	// TODO:
-	//}
+
 	// max 64 char
 	if len(roleName) > 64 {
 		return roleName[:64]
@@ -63,37 +69,16 @@ func (i *Client) roleName() string {
 	return roleName
 }
 
-func (i *Client) Prepare(ctx context.Context) error {
-	sess, err := awsx.NewSession(*i.config)
-	if err != nil {
-		return err
-	}
-
-	i.sts = sts.New(sess)
-	callerIdentity, err := i.sts.GetCallerIdentity(&sts.GetCallerIdentityInput{})
-	if err != nil {
-		return err
-	}
-	i.accountID = aws.StringValue(callerIdentity.Account)
-	i.iam = iam.New(sess)
-	return nil
-}
-
-// Reconcile IAM Role
+// CreateOrUpdate creates or updates the IAM roles
 func (i *Client) CreateOrUpdate(ctx context.Context) (*RoleStatus, error) {
 	prevRoleName := i.role.Status.Name
 	newRoleName := i.roleName()
 	if prevRoleName != "" && prevRoleName != newRoleName {
-		// i.log.Info("Role name changed!", "prevRole", prevRoleName, "newRole", newRoleName)
 		if i.isExists(prevRoleName) {
-			// i.log.Info("Found previous role! Deleting it!", "prevRole", prevRoleName)
 			err := i.delete(prevRoleName)
 			if err != nil {
-				// i.log.Error(err, "Error deleting the role!", "prevRole", prevRoleName)
 				return nil, err
 			}
-		} else {
-			// i.log.Info("Previous role not found! Ignoring it!", "prevRole", prevRoleName)
 		}
 	}
 	status, err := i.createOrSync(newRoleName)
@@ -103,14 +88,12 @@ func (i *Client) CreateOrUpdate(ctx context.Context) (*RoleStatus, error) {
 	return status, nil
 }
 
-// Finalize will delete iam role.
+// Delete will be called by Finalizer that will delete the IAM role
 func (i *Client) Delete(ctx context.Context) error {
 	roleName := i.role.Status.Name
 	if roleName != "" && i.isExists(roleName) {
-		// i.log.Info("Found iam role! Deleting it!", "role", roleName)
 		err := i.delete(roleName)
 		if err != nil {
-			// i.log.Error(err, "Error deleting the role!", "prevRole", roleName)
 			return err
 		}
 	}
@@ -119,18 +102,14 @@ func (i *Client) Delete(ctx context.Context) error {
 
 func (i *Client) createOrSync(roleName string) (*RoleStatus, error) {
 	if i.isExists(roleName) {
-		// i.log.Info("Found existing role! Syncing it!", "role", roleName)
 		status, err := i.sync(roleName)
 		if err != nil {
-			// i.log.Error(err, "Error syncing the role!", "role", roleName)
 			return nil, err
 		}
 		return status, nil
 	}
-	// i.log.Info("Creating the role!", "role", roleName)
 	status, err := i.create(roleName)
 	if err != nil {
-		// i.log.Error(err, "Error creating the role!", "role", roleName)
 		return nil, err
 	}
 	return status, nil
@@ -172,8 +151,9 @@ func (i *Client) delete(roleName string) error {
 		return err
 	}
 	for _, policy := range currentPolicies {
+		policyName := policy
 		_, err = i.iam.DeleteRolePolicy(&iam.DeleteRolePolicyInput{
-			PolicyName: &policy,
+			PolicyName: &policyName,
 			RoleName:   &roleName,
 		})
 		if err != nil {
@@ -228,43 +208,15 @@ func (i *Client) sync(roleName string) (*RoleStatus, error) {
 	}
 
 	// sync inline policy
-	existingInlinePolicyNames, err := i.listInlinePolicies(roleName)
+	err = i.syncInlinePolicies(roleName)
 	if err != nil {
 		return nil, err
-	}
-	inlinePolicyNames, inlinePolicyNameMapping := toInlinePolicyNames(i.role.Spec.AWS.InlinePolicies)
-	syncSteps := util.FindSyncSteps(existingInlinePolicyNames, inlinePolicyNames)
-	//// i.log.Info("Sync inline policies", "syncSteps", syncSteps)
-	for _, policyName := range syncSteps.Add {
-		err = i.createInlinePolicy(roleName, policyName, i.role.Spec.AWS.InlinePolicies[inlinePolicyNameMapping[policyName]])
-		if err != nil {
-			return nil, err
-		}
-	}
-	for _, policyName := range syncSteps.Delete {
-		err = i.deleteInlinePolicy(roleName, policyName)
-		if err != nil {
-			return nil, err
-		}
 	}
 
 	// sync policy arns
-	attachedPolicies, err := i.listAttachedPolicies(roleName)
+	err = i.syncPolicyArns(roleName)
 	if err != nil {
 		return nil, err
-	}
-	syncSteps = util.FindSyncSteps(toArns(attachedPolicies), i.toArns(i.role.Spec.AWS.Policies))
-	for _, policyArn := range syncSteps.Add {
-		err = i.attachPolicy(roleName, policyArn)
-		if err != nil {
-			return nil, err
-		}
-	}
-	for _, policyArn := range syncSteps.Delete {
-		err = i.detachPolicy(roleName, policyArn)
-		if err != nil {
-			return nil, err
-		}
 	}
 
 	// sync max-session duration.
@@ -289,6 +241,49 @@ func (i *Client) sync(roleName string) (*RoleStatus, error) {
 		}
 	}
 	return &RoleStatus{Name: roleName, ARN: aws.StringValue(awsRole.Arn)}, nil
+}
+
+func (i *Client) syncInlinePolicies(roleName string) error {
+	existingInlinePolicyNames, err := i.listInlinePolicies(roleName)
+	if err != nil {
+		return err
+	}
+	inlinePolicyNames, inlinePolicyNameMapping := toInlinePolicyNames(i.role.Spec.AWS.InlinePolicies)
+	syncSteps := util.FindSyncSteps(existingInlinePolicyNames, inlinePolicyNames)
+	for _, policyName := range syncSteps.Add {
+		err = i.createInlinePolicy(roleName, policyName, i.role.Spec.AWS.InlinePolicies[inlinePolicyNameMapping[policyName]])
+		if err != nil {
+			return err
+		}
+	}
+	for _, policyName := range syncSteps.Delete {
+		err = i.deleteInlinePolicy(roleName, policyName)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (i *Client) syncPolicyArns(roleName string) error {
+	attachedPolicies, err := i.listAttachedPolicies(roleName)
+	if err != nil {
+		return err
+	}
+	syncSteps := util.FindSyncSteps(toArns(attachedPolicies), i.toArns(i.role.Spec.AWS.Policies))
+	for _, policyArn := range syncSteps.Add {
+		err = i.attachPolicy(roleName, policyArn)
+		if err != nil {
+			return err
+		}
+	}
+	for _, policyArn := range syncSteps.Delete {
+		err = i.detachPolicy(roleName, policyArn)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func toCompactJSON(txt string) string {
@@ -401,11 +396,7 @@ func (i *Client) createInlinePolicies() error {
 }
 
 func (i *Client) createInlinePolicy(roleName, policyName, policy string) error {
-	policy, err := i.resolvePolicy(policy)
-	if err != nil {
-		return err
-	}
-	_, err = i.iam.PutRolePolicy(&iam.PutRolePolicyInput{
+	_, err := i.iam.PutRolePolicy(&iam.PutRolePolicyInput{
 		RoleName:       &roleName,
 		PolicyName:     &policyName,
 		PolicyDocument: &policy,
@@ -430,13 +421,6 @@ func (i *Client) deleteInlinePolicy(roleName, policyName string) error {
 		return err
 	}
 	return nil
-}
-
-func (i *Client) resolvePolicy(policy string) (string, error) {
-	//if strings.Contains(policy, "://") {
-	// TODO: !!
-	//}
-	return policy, nil
 }
 
 // Returns the ARN of a policy; allows for simply naming policies

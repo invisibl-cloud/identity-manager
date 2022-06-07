@@ -79,13 +79,14 @@ type wiReconcilerInterface interface {
 	Prepare(context.Context) error
 }
 
+// Reconcile reconciles the workload identity
 func (r *wiReconciler) Reconcile(ctx context.Context) error {
 	var rec wiReconcilerInterface
 	switch r.res.Spec.Provider {
 	case v1alpha1.ProviderAWS:
-		rec = aws.NewAWSRoleReconciler(r.base, r.res)
+		rec = aws.NewRoleReconciler(r.base, r.res)
 	case v1alpha1.ProviderAzure:
-		rec = azure.NewAzureIdentityReconciler(r.base, r.res)
+		rec = azure.NewIdentityReconciler(r.base, r.res)
 	default:
 		return fmt.Errorf("unknown provider %s", r.res.Spec.Provider)
 	}
@@ -96,13 +97,14 @@ func (r *wiReconciler) Reconcile(ctx context.Context) error {
 	return rec.Reconcile(ctx)
 }
 
+// Finalize implements Finalizer interface
 func (r *wiReconciler) Finalize(ctx context.Context) error {
 	var rec wiReconcilerInterface
 	switch r.res.Spec.Provider {
 	case v1alpha1.ProviderAWS:
-		rec = aws.NewAWSRoleReconciler(r.base, r.res)
+		rec = aws.NewRoleReconciler(r.base, r.res)
 	case v1alpha1.ProviderAzure:
-		rec = azure.NewAzureIdentityReconciler(r.base, r.res)
+		rec = azure.NewIdentityReconciler(r.base, r.res)
 	default:
 		return nil
 	}

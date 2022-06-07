@@ -24,8 +24,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
-// Reconciler
-type AzureIdentityReconciler struct {
+// IdentityReconciler is the definition of
+// Azure Identity Reconciler struct
+type IdentityReconciler struct {
 	client.Client
 	scheme *runtime.Scheme
 	res    *v1alpha1.WorkloadIdentity
@@ -35,15 +36,17 @@ type AzureIdentityReconciler struct {
 	msi   *msi.Client
 }
 
-func NewAzureIdentityReconciler(base *reconcilers.ReconcilerBase, res *v1alpha1.WorkloadIdentity) *AzureIdentityReconciler {
-	return &AzureIdentityReconciler{
+// NewIdentityReconciler initializes IdentityReconciler
+func NewIdentityReconciler(base *reconcilers.ReconcilerBase, res *v1alpha1.WorkloadIdentity) *IdentityReconciler {
+	return &IdentityReconciler{
 		Client: base.Client(),
 		scheme: base.Scheme(),
 		res:    res,
 	}
 }
 
-func (r *AzureIdentityReconciler) Prepare(ctx context.Context) error {
+// Prepare prepares the reconciler
+func (r *IdentityReconciler) Prepare(ctx context.Context) error {
 	c, err := r.getAzurex(ctx)
 	if err != nil {
 		return err
@@ -57,7 +60,7 @@ func (r *AzureIdentityReconciler) Prepare(ctx context.Context) error {
 	return nil
 }
 
-func (r *AzureIdentityReconciler) getAzurex(ctx context.Context) (*azurex.Client, error) {
+func (r *IdentityReconciler) getAzurex(ctx context.Context) (*azurex.Client, error) {
 	creds := r.res.Spec.Credentials
 	if creds == nil {
 		return azurex.New(azurex.WithEnv())
@@ -85,7 +88,8 @@ func (r *AzureIdentityReconciler) getAzurex(ctx context.Context) (*azurex.Client
 	return azurex.New(azurex.WithEnv(), azurex.WithConfigMap(configMap))
 }
 
-func (r *AzureIdentityReconciler) Reconcile(ctx context.Context) error {
+// Reconcile reconciles the workload identity
+func (r *IdentityReconciler) Reconcile(ctx context.Context) error {
 	// reconcile
 	id, err := r.doReconcile(ctx)
 	if err != nil {
@@ -121,7 +125,7 @@ func (r *AzureIdentityReconciler) Reconcile(ctx context.Context) error {
 	return nil
 }
 
-func (r *AzureIdentityReconciler) doSecret(ctx context.Context, id *msi.Identity) error {
+func (r *IdentityReconciler) doSecret(ctx context.Context, id *msi.Identity) error {
 	tmplData := map[string]interface{}{
 		"identity.id":          id.ID,
 		"identity.resourceID":  id.ID,
@@ -138,7 +142,10 @@ func (r *AzureIdentityReconciler) doSecret(ctx context.Context, id *msi.Identity
 	s.Name = util.DefaultString(r.res.Spec.WriteToSecretRef.Name, r.res.Name)
 	s.Namespace = util.DefaultString(r.res.Spec.WriteToSecretRef.Namespace, r.res.Namespace)
 	_, err := controllerutil.CreateOrUpdate(ctx, r.Client, s, func() error {
-		controllerutil.SetControllerReference(r.res, s, r.scheme)
+		err := controllerutil.SetControllerReference(r.res, s, r.scheme)
+		if err != nil {
+			return err
+		}
 		if len(s.Data) == 0 {
 			s.Data = map[string][]byte{}
 		}
@@ -147,10 +154,14 @@ func (r *AzureIdentityReconciler) doSecret(ctx context.Context, id *msi.Identity
 		}
 		return nil
 	})
-	return err
+	if err != nil {
+		return fmt.Errorf("error while creating or updating the object: %w", err)
+	}
+
+	return nil
 }
 
-func (r *AzureIdentityReconciler) doAzureIdentity(ctx context.Context, id *msi.Identity) (*unstructured.Unstructured, error) {
+func (r *IdentityReconciler) doAzureIdentity(ctx context.Context, id *msi.Identity) (*unstructured.Unstructured, error) {
 	u := &unstructured.Unstructured{}
 	u.SetAPIVersion("aadpodidentity.k8s.io/v1")
 	u.SetKind("AzureIdentity")
@@ -174,8 +185,12 @@ func (r *AzureIdentityReconciler) doAzureIdentity(ctx context.Context, id *msi.I
 			}
 		}
 	}
+
 	_, err := controllerutil.CreateOrUpdate(ctx, r.Client, u, func() error {
-		controllerutil.SetControllerReference(r.res, u, r.scheme)
+		err := controllerutil.SetControllerReference(r.res, u, r.scheme)
+		if err != nil {
+			return err
+		}
 		if spec != nil {
 			if spec.Metadata != nil {
 				labels := u.GetLabels()
@@ -210,10 +225,13 @@ func (r *AzureIdentityReconciler) doAzureIdentity(ctx context.Context, id *msi.I
 		}
 		return nil
 	})
-	return u, err
+	if err != nil {
+		return u, fmt.Errorf("error while creating or updating the object: %w", err)
+	}
+	return u, nil
 }
 
-func (r *AzureIdentityReconciler) doAzureIdentityBinding(ctx context.Context, aid *unstructured.Unstructured) error {
+func (r *IdentityReconciler) doAzureIdentityBinding(ctx context.Context, aid *unstructured.Unstructured) error {
 	u := &unstructured.Unstructured{}
 	u.SetAPIVersion("aadpodidentity.k8s.io/v1")
 	u.SetKind("AzureIdentityBinding")
@@ -236,8 +254,12 @@ func (r *AzureIdentityReconciler) doAzureIdentityBinding(ctx context.Context, ai
 			}
 		}
 	}
+
 	_, err := controllerutil.CreateOrUpdate(ctx, r.Client, u, func() error {
-		controllerutil.SetControllerReference(r.res, u, r.scheme)
+		err := controllerutil.SetControllerReference(r.res, u, r.scheme)
+		if err != nil {
+			return err
+		}
 		selector := aid.GetName()
 		if spec != nil {
 			if spec.Metadata != nil {
@@ -269,10 +291,14 @@ func (r *AzureIdentityReconciler) doAzureIdentityBinding(ctx context.Context, ai
 		}
 		return nil
 	})
-	return err
+	if err != nil {
+		return fmt.Errorf("error while creating or updating the object: %w", err)
+	}
+
+	return nil
 }
 
-func (r *AzureIdentityReconciler) doReconcile(ctx context.Context) (*msi.Identity, error) {
+func (r *IdentityReconciler) doReconcile(ctx context.Context) (*msi.Identity, error) {
 	log := log.FromContext(ctx)
 	// TODO: what if the name gets changed?
 	id, err := r.msi.CreateOrUpdate(ctx, util.DefaultString(r.res.Spec.Name, r.res.Name), map[string]*string{
@@ -295,12 +321,15 @@ func (r *AzureIdentityReconciler) doReconcile(ctx context.Context) (*msi.Identit
 				NotDataActions: to.StringSlicePtr(permission.NotDataActions),
 			})
 		}
-		r.rbac.CreateOrUpdateRoleDefinition(ctx, id, "", authorization.RoleDefinitionProperties{
+		err := r.rbac.CreateOrUpdateRoleDefinition(ctx, id, "", authorization.RoleDefinitionProperties{
 			RoleName:    to.StringPtr(v.RoleName),
 			RoleType:    to.StringPtr(v.RoleType),
 			Description: to.StringPtr(v.Description),
 			Permissions: &p,
 		})
+		if err != nil {
+			return nil, fmt.Errorf("CreateOrUpdateRoleDefinition: %w", err)
+		}
 	}
 
 	// Sync Role Assignments
@@ -343,11 +372,11 @@ func (r *AzureIdentityReconciler) doReconcile(ctx context.Context) (*msi.Identit
 	return id, nil
 }
 
-func (r *AzureIdentityReconciler) detachRoleDefinition(ctx context.Context, id string) error {
+func (r *IdentityReconciler) detachRoleDefinition(ctx context.Context, id string) error {
 	return r.rbac.DeleteRoleAssignment(ctx, id)
 }
 
-func (r *AzureIdentityReconciler) attachRoleDefinition(ctx context.Context, id string, principalID string, a v1alpha1.RoleAssignment) error {
+func (r *IdentityReconciler) attachRoleDefinition(ctx context.Context, id string, principalID string, a v1alpha1.RoleAssignment) error {
 	roleDefinitionID, err := r.rbac.GetRoleDefintionIDFromName(ctx, a.Role, "")
 	if err != nil {
 		return fmt.Errorf("GetRoleDefintionIDFromName: %w", err)
@@ -361,7 +390,8 @@ func (r *AzureIdentityReconciler) attachRoleDefinition(ctx context.Context, id s
 	return nil
 }
 
-func (r *AzureIdentityReconciler) Finalize(ctx context.Context) error {
+// Finalize implements Finalizer interface
+func (r *IdentityReconciler) Finalize(ctx context.Context) error {
 	ok, err := r.msi.EnsureDelete(ctx, util.DefaultString(r.res.Spec.Name, r.res.Name))
 	if err != nil {
 		return err

@@ -57,6 +57,7 @@ spec:
                   pods:
                     description: Pods to be managed
                     items:
+                      description: AwsRoleSpecPod defines the AWS's role spec pod
                       properties:
                         matchExpressions:
                           description: matchExpressions is a list of label selector
@@ -111,7 +112,7 @@ spec:
                   serviceAccounts:
                     description: ServiceAccounts to be managed
                     items:
-                      description: ServiceAccount to create service account.
+                      description: ServiceAccount defines the service account's metadata
                       properties:
                         Annotations:
                           additionalProperties:
@@ -214,6 +215,7 @@ spec:
                     type: object
                   roleAssignments:
                     additionalProperties:
+                      description: RoleAssignment defines the role assignment
                       properties:
                         role:
                           description: Role of the role assignment
@@ -229,6 +231,7 @@ spec:
                   roleDefinitions:
                     description: RoleDefinitions is a list of role definitions
                     items:
+                      description: RoleDefinition is the definition for a Role
                       properties:
                         assignableScopes:
                           description: AssignableScopes is a list of assignable scopes
@@ -245,6 +248,8 @@ spec:
                         permissions:
                           description: Permissions of the role definition
                           items:
+                            description: RolePermission defines the permissions of
+                              a Role
                             properties:
                               actions:
                                 description: Actions is a list of actions
@@ -381,6 +386,7 @@ spec:
               externalResources:
                 description: External Resources managed bu the Identity
                 items:
+                  description: ExternalResource is the external resource's definition
                   properties:
                     id:
                       description: ID of the external resource
@@ -399,6 +405,7 @@ spec:
               resources:
                 description: Resources managed by the Identity
                 items:
+                  description: Resource is the definition of the kubernetes resource
                   properties:
                     apiVersion:
                       description: APIVersion of the resource

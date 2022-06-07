@@ -1,6 +1,7 @@
 package util
 
 import (
+	// #nosec
 	"crypto/md5"
 	"fmt"
 	"io"
@@ -9,6 +10,8 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
+// SyncSteps maintains the steps intended for
+// addition, deletion and common steps
 type SyncSteps struct {
 	Add    []string
 	Delete []string
@@ -41,6 +44,7 @@ func FindSyncSteps(src []string, dest []string) SyncSteps {
 	return SyncSteps{Delete: ToArray(del), Add: ToArray(add), Common: ToArray(common)}
 }
 
+// ToMap converts string slice to map[string]bool
 func ToMap(arr []string) map[string]bool {
 	m := map[string]bool{}
 	for _, v := range arr {
@@ -49,6 +53,7 @@ func ToMap(arr []string) map[string]bool {
 	return m
 }
 
+// ToArray converts map[string]bool to string slice
 func ToArray(m map[string]bool) []string {
 	arr := make([]string, len(m))
 	i := 0
@@ -59,6 +64,7 @@ func ToArray(m map[string]bool) []string {
 	return arr
 }
 
+// Contains check is a string is contained in the slice of string
 func Contains(list []string, s string) bool {
 	for _, v := range list {
 		if v == s {
@@ -68,6 +74,8 @@ func Contains(list []string, s string) bool {
 	return false
 }
 
+// DefaultString expects multipls string args and returns
+// the first non empty string
 func DefaultString(list ...string) string {
 	for _, v := range list {
 		if v != "" {
@@ -88,12 +96,16 @@ func GetEnvString(def string, keys ...string) string {
 	return def
 }
 
+// MD5 converts string to its MD5 hash
+// #nosec
 func MD5(data string) string {
 	h := md5.New()
-	io.WriteString(h, data)
+	_, _ = io.WriteString(h, data)
 	return fmt.Sprintf("%x", h.Sum(nil))
 }
 
+// UnstructuredObject expects apiVersiona and kind,
+// sets them in an *unstructured.Unstructured object and returns it
 func UnstructuredObject(apiVersion string, kind string) *unstructured.Unstructured {
 	u := &unstructured.Unstructured{}
 	u.SetAPIVersion(apiVersion)
