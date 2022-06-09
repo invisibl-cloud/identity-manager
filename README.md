@@ -1,6 +1,5 @@
-<!-- ![Invisibl](docs/assets/identity-manager-logo.png) -->
 <div align="center">
-<img src="docs/assets/identity-manager-logo.svg" height="400" width="800" alt="Identity Manager" style="padding-bottom: 20px" />
+<img src="docs/assets/identity-manager-logo.svg" height="350" width="600" alt="Identity Manager" style="padding-bottom: 20px" />
 <br>
 <img src="https://github.com/invisibl-cloud/identity-manager/actions/workflows/ci.yml/badge.svg">
 <a href="https://github.com/invisibl-cloud/identity-manager/releases">
@@ -18,8 +17,12 @@ Identity Manager Operator guides, quick start, troubleshooting and reference doc
 
 ## Supported Cloud Platforms
 
-[![AWS](https://img.shields.io/badge/AWS-232F3E?style=for-the-badge&logo=amazonaws&logoColor=white)](https://aws.amazon.com/)
-[![Azure](https://img.shields.io/badge/AZURE-0078D4?style=for-the-badge&logo=microsoftazure&logoColor=white)](https://azure.microsoft.com/)
+<a href="https://aws.amazon.com/">
+    <img src="docs/assets/aws.png" height="100" width="130" alt="Amazon AWS" style="padding-right: 20px" />
+</a>
+<a href="https://azure.microsoft.com/">
+    <img src="docs/assets/azure.png" height="100" width="150" alt="Microsoft Azure" />
+</a>
 
 ## Contributing
 
@@ -28,7 +31,3 @@ We welcome and encourage contributions to this project! Please read the [Develop
 ## License
 
 [Apache License 2.0](./LICENSE)
-
-## Kicked off by
-
-[![Invisibl](docs/assets/invisibl-cloud-logo.png)](https://invisibl.io)

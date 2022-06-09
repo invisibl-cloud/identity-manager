@@ -3,6 +3,7 @@ package iam
 import (
 	"context"
 	"errors"
+	"sort"
 	"testing"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -77,8 +78,10 @@ func TestToInlinePolicyNames(t *testing.T) {
 		"S3ReadPolicy-3ceca7bf0f96b81a74f9af5ac4f60012": "S3ReadPolicy",
 		"S3ReadPolicy-eks-dev-wlk4-B1267BBA7830580562E3AD71DFC27CE7-2E3AD71DFC27CE7B1267BBA783058056-0562E3AD71DFC27CE7-2E3AD71DF-BA78305": "S3ReadPolicy-eks-dev-wlk4-B1267BBA7830580562E3AD71DFC27CE7-2E3AD71DFC27CE7B1267BBA783058056-0562E3AD71DFC27CE7-2E3AD71DF-BA7830580562E3AD71DF",
 	}
-
 	pols, m := toInlinePolicyNames(inlinePolicies)
+	// map iteration order inside toInlinePolicyNames is not guaranteed.
+	// Hence pols might be in different order. Sort the pols before assertion.
+	sort.Strings(pols)
 	assert.Equal(t, expectedPolicyNames, pols)
 	assert.Equal(t, expectedPolicies, m)
 }

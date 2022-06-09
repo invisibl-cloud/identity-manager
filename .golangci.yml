@@ -21,6 +21,9 @@ linters:
     - gosec
     - gocyclo
 
+run:
+  timeout: 5m
+
 linters-settings:
   gocyclo:
     # Minimal code complexity to report.
