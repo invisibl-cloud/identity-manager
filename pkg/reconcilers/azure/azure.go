@@ -10,6 +10,8 @@ import (
 	"github.com/google/uuid"
 	"github.com/invisibl-cloud/identity-manager/api/v1alpha1"
 	"github.com/invisibl-cloud/identity-manager/pkg/providers/azurex"
+	"github.com/invisibl-cloud/identity-manager/pkg/providers/azurex/clients/accounts"
+	"github.com/invisibl-cloud/identity-manager/pkg/providers/azurex/clients/cosmos"
 	"github.com/invisibl-cloud/identity-manager/pkg/providers/azurex/clients/graphrbac"
 	"github.com/invisibl-cloud/identity-manager/pkg/providers/azurex/clients/imds"
 	"github.com/invisibl-cloud/identity-manager/pkg/providers/azurex/clients/msi"
@@ -116,7 +118,31 @@ func (r *IdentityReconciler) Reconcile(ctx context.Context) error {
 	}
 
 	if r.res.Spec.WriteToSecretRef != nil {
-		err = r.doSecret(ctx, id)
+		tmplData := map[string]interface{}{
+			"identity.id":          id.ID,
+			"identity.resourceID":  id.ID,
+			"identity.clientID":    id.ClientID,
+			"identity.principalID": id.PrincipalID,
+			"identity.name":        id.Name,
+			"identity.tenantID":    id.TenantID,
+			"tenantId":             id.TenantID,
+			"subscriptionId":       id.SubscriptionID,
+			"resourceGroup":        id.ResourceGroup,
+			"location":             id.Location,
+		}
+		ref := &v1alpha1.WriteToSecretRef{
+			Name:         util.DefaultString(r.res.Spec.WriteToSecretRef.Name, r.res.Name),
+			Namespace:    util.DefaultString(r.res.Spec.WriteToSecretRef.Namespace, r.res.Namespace),
+			TemplateData: r.res.Spec.WriteToSecretRef.TemplateData,
+		}
+		err = r.doSecret(ctx, tmplData, ref)
+		if err != nil {
+			return err
+		}
+	}
+
+	if len(r.res.Spec.Azure.SyncKeys) > 0 {
+		err = r.doSyncKeyReconcile(ctx)
 		if err != nil {
 			return err
 		}
@@ -125,22 +151,10 @@ func (r *IdentityReconciler) Reconcile(ctx context.Context) error {
 	return nil
 }
 
-func (r *IdentityReconciler) doSecret(ctx context.Context, id *msi.Identity) error {
-	tmplData := map[string]interface{}{
-		"identity.id":          id.ID,
-		"identity.resourceID":  id.ID,
-		"identity.clientID":    id.ClientID,
-		"identity.principalID": id.PrincipalID,
-		"identity.name":        id.Name,
-		"identity.tenantID":    id.TenantID,
-		"tenantId":             id.TenantID,
-		"subscriptionId":       id.SubscriptionID,
-		"resourceGroup":        id.ResourceGroup,
-		"location":             id.Location,
-	}
+func (r *IdentityReconciler) doSecret(ctx context.Context, tmplData map[string]interface{}, ref *v1alpha1.WriteToSecretRef) error {
 	s := &corev1.Secret{}
-	s.Name = util.DefaultString(r.res.Spec.WriteToSecretRef.Name, r.res.Name)
-	s.Namespace = util.DefaultString(r.res.Spec.WriteToSecretRef.Namespace, r.res.Namespace)
+	s.Name = ref.Name
+	s.Namespace = ref.Namespace
 	_, err := controllerutil.CreateOrUpdate(ctx, r.Client, s, func() error {
 		err := controllerutil.SetControllerReference(r.res, s, r.scheme)
 		if err != nil {
@@ -149,7 +163,7 @@ func (r *IdentityReconciler) doSecret(ctx context.Context, id *msi.Identity) err
 		if len(s.Data) == 0 {
 			s.Data = map[string][]byte{}
 		}
-		for k, v := range r.res.Spec.WriteToSecretRef.TemplateData {
+		for k, v := range ref.TemplateData {
 			s.Data[k] = []byte(fasttemplate.ExecuteString(v, "<(", ")", tmplData))
 		}
 		return nil
@@ -157,7 +171,6 @@ func (r *IdentityReconciler) doSecret(ctx context.Context, id *msi.Identity) err
 	if err != nil {
 		return fmt.Errorf("error while creating or updating the object: %w", err)
 	}
-
 	return nil
 }
 
@@ -400,4 +413,63 @@ func (r *IdentityReconciler) Finalize(ctx context.Context) error {
 		return fmt.Errorf("deleting identity %s", r.res.Spec.Name)
 	}
 	return nil
+}
+
+func (r *IdentityReconciler) doSyncKeyReconcile(ctx context.Context) error {
+	c, err := r.getAzurex(ctx)
+	if err != nil {
+		return err
+	}
+	for _, sk := range r.res.Spec.Azure.SyncKeys {
+		var tmplData = map[string]interface{}{}
+		switch sk.Source {
+		case v1alpha1.SyncKeySourceStorage:
+			tmplData, err = r.getStorageTmplData(ctx, c, sk)
+			if err != nil {
+				return err
+			}
+		case v1alpha1.SyncKeySourceCosmos:
+			tmplData, err = r.getCosmosTmplData(ctx, c, sk)
+			if err != nil {
+				return err
+			}
+		default:
+			return fmt.Errorf("unsupported sync key source: %s", sk.Source)
+		}
+		err = r.doSecret(ctx, tmplData, sk.WriteToSecretRef)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (r *IdentityReconciler) getStorageTmplData(ctx context.Context, c *azurex.Client, sk *v1alpha1.SyncKey) (map[string]interface{}, error) {
+	storageAccountName, ok := sk.Params["name"]
+	if !ok {
+		return nil, fmt.Errorf("missing name in parameters")
+	}
+	key, err := accounts.New(c).GetKey(ctx, storageAccountName)
+	if err != nil {
+		return nil, err
+	}
+	return map[string]interface{}{
+		"storageAccount.key": key,
+	}, nil
+}
+
+func (r *IdentityReconciler) getCosmosTmplData(ctx context.Context, c *azurex.Client, sk *v1alpha1.SyncKey) (map[string]interface{}, error) {
+	cosmosAccountName, ok := sk.Params["name"]
+	if !ok {
+		return nil, fmt.Errorf("missing name in parameters")
+	}
+	key, err := cosmos.New(c).GetKey(ctx, cosmosAccountName)
+	if err != nil {
+		return nil, err
+	}
+	connString := fmt.Sprintf("DefaultEndpointsProtocol=https;AccountName=%s;AccountKey=%s;EndpointSuffix=cosmos.azure.com", cosmosAccountName, key)
+	return map[string]interface{}{
+		"cosmosAccount.key":              key,
+		"cosmosAccount.connectionString": connString,
+	}, nil
 }
