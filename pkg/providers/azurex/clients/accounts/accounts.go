@@ -8,16 +8,20 @@ import (
 	"github.com/invisibl-cloud/identity-manager/pkg/providers/azurex"
 )
 
+type AccountsClientFactory func() AccountsClient
+
 type Client struct {
 	Client *azurex.Client
+	AccountsClientFactory
 }
 
 func New(p *azurex.Client) *Client {
 	c := &Client{Client: p}
+	c.AccountsClientFactory = c.NewAccountsClient
 	return c
 }
 
-func (x *Client) NewAccountsClient() storage.AccountsClient {
+func (x *Client) NewAccountsClient() AccountsClient {
 	sc := storage.NewAccountsClient(x.Client.GetConfig().SubscriptionID)
 	sc.Authorizer = x.Client.GetAuthorizer()
 	return sc
@@ -27,7 +31,7 @@ func (x *Client) GetKey(ctx context.Context, storageAccountName string) (string,
 	if storageAccountName == "" {
 		return "", fmt.Errorf("storage account name should not be empty")
 	}
-	ac := storage.NewAccountsClient(x.Client.GetConfig().SubscriptionID)
+	ac := x.AccountsClientFactory()
 	resp, err := ac.ListKeys(ctx, x.Client.GetConfig().ResourceGroup, storageAccountName, storage.ListKeyExpandKerb)
 	if err != nil {
 		return "", err

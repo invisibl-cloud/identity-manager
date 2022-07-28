@@ -463,11 +463,15 @@ func (r *IdentityReconciler) getCosmosTmplData(ctx context.Context, c *azurex.Cl
 	if !ok {
 		return nil, fmt.Errorf("missing name in parameters")
 	}
-	key, err := cosmos.New(c).GetKey(ctx, cosmosAccountName)
+	cc := cosmos.New(c)
+	key, err := cc.GetKey(ctx, cosmosAccountName)
 	if err != nil {
 		return nil, err
 	}
-	connString := fmt.Sprintf("DefaultEndpointsProtocol=https;AccountName=%s;AccountKey=%s;EndpointSuffix=cosmos.azure.com", cosmosAccountName, key)
+	connString, err := cc.GetConnectionString(ctx, cosmosAccountName)
+	if err != nil {
+		return nil, err
+	}
 	return map[string]interface{}{
 		"cosmosAccount.key":              key,
 		"cosmosAccount.connectionString": connString,
