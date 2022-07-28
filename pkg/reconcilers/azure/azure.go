@@ -421,7 +421,7 @@ func (r *IdentityReconciler) doSyncKeyReconcile(ctx context.Context) error {
 		return err
 	}
 	for _, sk := range r.res.Spec.Azure.SyncKeys {
-		var tmplData = map[string]interface{}{}
+		var tmplData map[string]interface{}
 		switch sk.Source {
 		case v1alpha1.SyncKeySourceStorage:
 			tmplData, err = r.getStorageTmplData(ctx, c, sk)

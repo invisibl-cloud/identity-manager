@@ -25,7 +25,7 @@ func TestCosmosClient_GetKey_Accuracy(t *testing.T) {
 	x, _ := azurex.New(azurex.WithEnv())
 	c := &Client{
 		Client: x,
-		CosmosClientFactory: func() CosmosClient {
+		cosmosClientFactory: func() CosmosClient {
 			return mc
 		},
 	}
@@ -45,7 +45,7 @@ func TestCosmosClient_ConnectionString_Accuracy(t *testing.T) {
 	x, _ := azurex.New(azurex.WithEnv())
 	c := &Client{
 		Client: x,
-		CosmosClientFactory: func() CosmosClient {
+		cosmosClientFactory: func() CosmosClient {
 			return mc
 		},
 	}

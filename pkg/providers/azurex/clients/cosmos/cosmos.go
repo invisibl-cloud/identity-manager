@@ -9,30 +9,33 @@ import (
 	"github.com/invisibl-cloud/identity-manager/pkg/util"
 )
 
-type CosmosClientFactory func() CosmosClient
+type cosmosClientFactory func() CosmosClient
 
+// Client is the cosmos client struct
 type Client struct {
 	Client *azurex.Client
-	CosmosClientFactory
+	cosmosClientFactory
 }
 
+// New creates a new cosmos client
 func New(p *azurex.Client) *Client {
 	c := &Client{Client: p}
-	c.CosmosClientFactory = c.NewAccountsClient
+	c.cosmosClientFactory = c.newAccountsClient
 	return c
 }
 
-func (x *Client) NewAccountsClient() CosmosClient {
+func (x *Client) newAccountsClient() CosmosClient {
 	dc := documentdb.NewDatabaseAccountsClient(x.Client.GetConfig().SubscriptionID)
 	dc.Authorizer = x.Client.GetAuthorizer()
 	return dc
 }
 
+// GetKey fetches accesskey for the cosmos account
 func (x *Client) GetKey(ctx context.Context, cosmosAccountName string) (string, error) {
 	if cosmosAccountName == "" {
 		return "", fmt.Errorf("cosmos account name should not be empty")
 	}
-	ac := x.CosmosClientFactory()
+	ac := x.cosmosClientFactory()
 	resp, err := ac.ListKeys(ctx, x.Client.GetConfig().ResourceGroup, cosmosAccountName)
 	if err != nil {
 		return "", err
@@ -49,13 +52,14 @@ func (x *Client) GetKey(ctx context.Context, cosmosAccountName string) (string, 
 	return "", nil
 }
 
-func (x *Client) GetConnectionString(ctx context.Context, accName string) (string, error) {
-	ac := x.CosmosClientFactory()
-	resp, err := ac.ListKeys(ctx, x.Client.GetConfig().ResourceGroup, accName)
+// GetConnectionString builds connection string for the cosmos account
+func (x *Client) GetConnectionString(ctx context.Context, cosmosAccountName string) (string, error) {
+	ac := x.cosmosClientFactory()
+	resp, err := ac.ListKeys(ctx, x.Client.GetConfig().ResourceGroup, cosmosAccountName)
 	if err != nil {
 		return "", err
 	}
 	key := util.DefaultString(*resp.PrimaryMasterKey, *resp.SecondaryMasterKey)
-	connString := fmt.Sprintf("DefaultEndpointsProtocol=https;AccountName=%s;AccountKey=%s;EndpointSuffix=cosmos.azure.com", accName, key)
+	connString := fmt.Sprintf("DefaultEndpointsProtocol=https;AccountName=%s;AccountKey=%s;EndpointSuffix=cosmos.azure.com", cosmosAccountName, key)
 	return connString, nil
 }

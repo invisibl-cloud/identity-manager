@@ -27,7 +27,7 @@ func TestAccountsClient_GetKey_Accuracy(t *testing.T) {
 	x, _ := azurex.New(azurex.WithEnv())
 	c := &Client{
 		Client: x,
-		AccountsClientFactory: func() AccountsClient {
+		accountsClientFactory: func() AccountsClient {
 			return mc
 		},
 	}
