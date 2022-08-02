@@ -128,6 +128,9 @@ func (i *Client) create(roleName string) (*RoleStatus, error) {
 	if i.role.Spec.AWS.MaxSessionDuration > 0 {
 		input.MaxSessionDuration = &i.role.Spec.AWS.MaxSessionDuration
 	}
+	if i.role.Spec.AWS.PermissionsBoundary != "" {
+		input.PermissionsBoundary = &i.role.Spec.AWS.PermissionsBoundary
+	}
 	// input.Tags
 	createRoleOutput, err := i.iam.CreateRole(input)
 	if err != nil {
@@ -240,6 +243,18 @@ func (i *Client) sync(roleName string) (*RoleStatus, error) {
 			return nil, err
 		}
 	}
+
+	// sync permissions boundary
+	if i.role.Spec.AWS.PermissionsBoundary != "" && aws.StringValue(awsRole.PermissionsBoundary.PermissionsBoundaryArn) != i.role.Spec.AWS.PermissionsBoundary {
+		_, err = i.iam.PutRolePermissionsBoundary(&iam.PutRolePermissionsBoundaryInput{
+			RoleName:            &roleName,
+			PermissionsBoundary: &i.role.Spec.AWS.PermissionsBoundary,
+		})
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	return &RoleStatus{Name: roleName, ARN: aws.StringValue(awsRole.Arn)}, nil
 }
 

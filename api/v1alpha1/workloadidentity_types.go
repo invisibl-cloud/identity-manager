@@ -240,6 +240,9 @@ type WorkloadIdentityAWS struct {
 	// Pods to be managed
 	// +optional
 	Pods []*AwsRoleSpecPod `json:"pods,omitempty"`
+	// PermissionsBoundary of the role
+	// +optional
+	PermissionsBoundary string `json:"permissionsBoundary,omitempty"`
 }
 
 // AwsRoleSpecPod defines the AWS's role spec pod
