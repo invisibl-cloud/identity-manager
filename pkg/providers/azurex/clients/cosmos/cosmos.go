@@ -46,10 +46,7 @@ func (x *Client) GetKey(ctx context.Context, cosmosAccountName string) (string, 
 	if resp.PrimaryMasterKey != nil {
 		return *resp.PrimaryMasterKey, nil
 	}
-	if resp.SecondaryMasterKey != nil {
-		return *resp.SecondaryMasterKey, nil
-	}
-	return "", nil
+	return *resp.SecondaryMasterKey, nil
 }
 
 // GetConnectionString builds connection string for the cosmos account

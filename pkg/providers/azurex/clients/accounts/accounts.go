@@ -42,11 +42,12 @@ func (x *Client) GetKey(ctx context.Context, storageAccountName string) (string,
 	if resp.Keys == nil {
 		return "", fmt.Errorf("no keys found for account: %s", storageAccountName)
 	}
+	var key string
 	for _, v := range *resp.Keys {
 		if v.KeyName == nil || v.Value == nil {
 			continue
 		}
-		return *v.Value, nil
+		key = *v.Value
 	}
-	return "", nil
+	return key, nil
 }
