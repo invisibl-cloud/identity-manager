@@ -312,6 +312,10 @@ func (r *IdentityReconciler) doAzureIdentityBinding(ctx context.Context, aid *un
 }
 
 func (r *IdentityReconciler) doReconcile(ctx context.Context) (*msi.Identity, error) {
+	if r.res.Spec.Azure == nil {
+		return nil, fmt.Errorf("missing azure section for provider azure")
+	}
+
 	log := log.FromContext(ctx)
 	// TODO: what if the name gets changed?
 	id, err := r.msi.CreateOrUpdate(ctx, util.DefaultString(r.res.Spec.Name, r.res.Name), map[string]*string{
