@@ -1,0 +1,98 @@
+# Project information
+site_name: Identity Manager Operator
+site_description: "Documentation for Identity Manager Operator."
+site_url: https://identity-manager.io
+site_author: Identity Manager Operator Development Team
+
+# Repository information
+repo_name: Identity Manager 
+repo_url: https://github.com/invisibl-cloud/identity-manager
+edit_uri: edit/develop/docs
+remote_branch: gh-pages
+
+# Theme configuration
+theme:
+  name: material
+  #custom_dir: overrides
+  favicon: assets/images/logo.png
+  logo: assets/images/logo.png
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: deep orange
+      accent: purple
+      toggle:
+        icon: material/toggle-switch-off-outline 
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: grey
+      accent: white
+      toggle:
+        icon: material/toggle-switch
+        name: Switch to light mode
+  features:
+    - navigation.instant
+    - navigation.tracking
+    - navigation.indexes
+
+# Extra variables
+# https://github.com/rosscdh/mkdocs-markdownextradata-plugin
+extra:
+  version:
+    provider: mike
+  generator: false
+  analytics:
+    provider: google
+    property: G-ZF9WNV7GFB
+extra_css:
+    - assets/css/extra.css
+
+# Extensions
+markdown_extensions:
+  # Add cards such as tips, notes, and warnings
+  # https://python-markdown.github.io/extensions/admonition/
+  - admonition
+  # Add attributes to the generated HTML elements, such as explicit ids for section titles
+  # https://python-markdown.github.io/extensions/attr_list/
+  - attr_list
+  # Allow defining meta-data for each page
+  # https://python-markdown.github.io/extensions/meta_data/
+  - meta
+  # Add syntax highlighting to code blocks
+  # https://facelessuser.github.io/pymdown-extensions/extensions/highlight/
+  - pymdownx.highlight
+  # Extended syntax for fenced code blocks
+  # https://facelessuser.github.io/pymdown-extensions/extensions/superfences/
+  - pymdownx.superfences
+  # Strip comments from the generated HTML
+  # https://facelessuser.github.io/pymdown-extensions/extensions/striphtml/
+  - pymdownx.striphtml
+  - pymdownx.snippets:
+      base_path: docs
+  - toc:
+      permalink: true
+
+# Plugins
+plugins:
+  - search:
+      lang: en
+  - mike:
+      # these fields are all optional; the defaults are as below...
+      version_selector: true   # set to false to leave out the version selector
+      css_dir: css             # the directory to put the version selector's CSS
+      javascript_dir: js       # the directory to put the version selector's JS
+
+nav:
+  - Introduction: index.md
+  - Overview: api-overview.md
+  - Quick start: guides-quick-start.md
+  - API Types:
+      - WorkloadIdentity: api-specification.md
+  - Guides:
+      - Introduction: guides-introduction.md
+      - Getting started: guides-getting-started.md
+      - Developer Guide: developer-guide.md
+  - Contributing:
+    - Code of Conduct: contributing-coc.md
+    - Contributing Process: contributing-process.md

@@ -1,0 +1,38 @@
+name: docs
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - v[0-9]+.[0-9]+.[0-9]+
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+          submodules: recursive
+      - uses: actions/setup-python@v2
+        with:
+          python-version: "3.8"
+          architecture: x64
+          cache: 'pip'
+      - name: Install mkdocs
+        run: pip install mkdocs-material mike
+      - name: Configure Git user
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+      - name: Determine Build Information
+        id: buildinfo
+        run: |
+          case $GITHUB_REF in
+            refs/tags/*)  VERSION=${GITHUB_REF#refs/tags/};;
+            refs/heads/*) VERSION=$(echo ${GITHUB_REF#refs/heads/} | sed -r 's#/+#-#g');;
+          esac
+          echo ::set-output name=version::${VERSION}
+      - name: Deploy
+        run: mike deploy -up ${{ steps.buildinfo.outputs.version }}

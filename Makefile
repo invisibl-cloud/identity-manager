@@ -247,3 +247,14 @@ COMMIT_HASH ?= $(shell git rev-parse HEAD)
 
 release-binary:
 	go build -o identity-manager -v -ldflags "-w -X main.version=$(VERSION) -X main.buildDate=$(BUILD_DATE) -X main.commitHash=$(COMMIT_HASH) -extldflags -static"
+
+docker-mkdocs-serve:
+	docker run --rm -it -p 8000:8000 -v $(shell pwd)/docs:/docs squidfunk/mkdocs-material serve
+
+gen-crd-docs:
+	go install github.com/ahmetb/gen-crd-api-reference-docs@latest
+	gen-crd-api-reference-docs \
+			-template-dir ./hack/api-docs \
+			-config ./hack/api-docs/config.json \
+			-api-dir github.com/invisibl-cloud/identity-manager/api/v1alpha1 \
+			-out-file docs/api-specification.html

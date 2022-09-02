@@ -1,10 +1,11 @@
 <div align="center">
-<img src="docs/assets/identity-manager-logo.svg" height="350" width="600" alt="Identity Manager" style="padding-bottom: 20px" />
+    <img src="docs/assets/logo.svg" height="350" width="600" alt="Identity Manager" style="padding-bottom: 20px" />
 <br>
 <img src="https://github.com/invisibl-cloud/identity-manager/actions/workflows/ci.yml/badge.svg">
 <a href="https://github.com/invisibl-cloud/identity-manager/releases">
-        <img src="https://img.shields.io/github/v/release/invisibl-cloud/identity-manager">
-    </a>
+<img src="https://img.shields.io/github/v/release/invisibl-cloud/identity-manager">
+</a>
+<a href="https://artifacthub.io/packages/helm/invisibl/identity-manager"><img alt="Artifact Hub" src="https://img.shields.io/endpoint?url=https://artifacthub.io/badge/repository/identity-manager" /></a>
 </div>
 
 # Identity Manager
