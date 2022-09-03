@@ -1,0 +1,61 @@
+apiVersion: identity-manager.io/v1alpha1
+kind: WorkloadIdentity
+metadata:
+  namespace: demo
+  name: demo-identity
+spec:
+  credentials:
+      source: Secret
+      secretRef:
+        name: aws-credentials
+        namespace: demo
+      properties:
+        region: us-east-1
+  aws:
+    assumeRolePolicy: |
+      {
+        "Version": "2012-10-17",
+        "Statement": [
+          {
+            "Effect": "Allow",
+            "Principal": {
+              "Federated": "arn:aws:iam::454135189203:oidc-provider/oidc.eks.us-east-1.amazonaws.com/id/33FC4D52E7EC1A120425308D0853F923A"
+            },
+            "Action": "sts:AssumeRoleWithWebIdentity",
+            "Condition": {
+              "StringEquals": {
+                "oidc.eks.us-east-1.amazonaws.com/id/33FC4D52E7EC1A120425308D0853F923A:sub": "system:serviceaccount:demo:sa-demo"
+              }
+            }
+          }
+        ]
+      }
+    inlinePolicies:
+      ec2-describe-0: |
+        {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Action": [
+                "ec2:Describe*"
+              ],
+              "Resource": [
+                "*"
+              ]
+            }
+          ]
+        }
+    maxSessionDuration: 3600
+    path: /
+    pods:
+      - matchLabels:
+          app.kubernetes.io/name: demo-identity
+          app.kubernetes.io/version: v1
+    serviceAccounts:
+      - action: Create
+        name: sa-demo
+        namespace: demo
+  description: 'identity for demoworkload'
+  name: demo-identity
+  provider: AWS

@@ -14,9 +14,6 @@ RUN go mod download
 COPY . .
 RUN make release-binary
 
-FROM alpine:3.16.0
-COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
-COPY --from=builder /usr/share/zoneinfo /usr/share/zoneinfo
-COPY --from=builder /app/identity-manager /app/identity-manager
+FROM gcr.io/distroless/static-debian11:nonroot
 WORKDIR /app
 ENTRYPOINT ["/app/identity-manager"]

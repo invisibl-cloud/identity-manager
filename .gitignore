@@ -35,4 +35,5 @@ local.*
 /dist/
 /site/
 /local/
-...
+
+dictionary.dic

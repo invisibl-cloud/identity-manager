@@ -1,0 +1,60 @@
+apiVersion: identity-manager.io/v1alpha1
+kind: WorkloadIdentity
+metadata:
+  namespace: example
+  name: example
+spec:
+  name: example
+  description: identity for example workload
+  provider: AWS
+  credentials:
+    source: Secret
+    secretRef:
+      name: aws-credentials
+      namespace: example
+    properties:
+      region: us-east-1
+  aws:
+    maxSessionDuration: 3600
+    path: /
+    assumeRolePolicy: |
+      {
+        "Version": "2012-10-17",
+        "Statement": [
+          {
+            "Effect": "Allow",
+            "Principal": {
+              "Federated": "arn:aws:iam::xxxxxxxxx:oidc-provider/oidc.eks.us-east-1.amazonaws.com/id/4EDBDB78CF81F4F9D1CD8B9962E221B1"
+            },
+            "Action": "sts:AssumeRoleWithWebIdentity",
+            "Condition": {
+              "StringEquals": {
+                "oidc.eks.us-east-1.amazonaws.com/id/4EDBDB78CF81F4F9D1CD8B9962E221B1:sub": "system:serviceaccount:example:example"
+              }
+            }
+          }
+        ]
+      }
+    inlinePolicies:
+      ec2: |
+        {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Action": [
+                "ec2:Describe*"
+              ],
+              "Resource": [
+                "*"
+              ]
+            }
+          ]
+        }
+    pods:
+      - matchLabels:
+          app.kubernetes.io/name: example
+    serviceAccounts:
+      - action: Update
+        name: example
+        namespace: example

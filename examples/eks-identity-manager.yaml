@@ -1,0 +1,44 @@
+apiVersion: eksctl.io/v1alpha5
+kind: ClusterConfig
+metadata:
+  name: identity-manager-test
+  region: us-east-1
+  version: '1.21'
+vpc:
+  subnets:
+    private:
+      us-east-1a: { id: subnet-xxxxxx }
+      us-east-1b: { id: subnet-xxxxxx }
+  clusterEndpoints:
+    publicAccess:  true
+iam:
+  withOIDC: true
+  serviceAccounts:
+  - metadata:
+      name: identity-manager
+      namespace: identity-manager
+    attachPolicy: # inline policy can be defined along with `attachPolicyARNs`
+      Version: "2012-10-17"
+      Statement:
+      - Effect: Allow
+        Action:
+        - "iam:AttachRolePolicy"
+        - "iam:CreateRole"
+        - "iam:DeleteRole"
+        - "iam:DeleteRolePolicy"
+        - "iam:DetachRolePolicy"
+        - "iam:GetRole"
+        - "iam:ListAttachedRolePolicies"
+        - "iam:ListRolePolicies"
+        - "iam:PutRolePolicy"
+        - "iam:UpdateAssumeRolePolicy"
+        - "iam:UpdateRole"
+        - "sts:GetCallerIdentity"
+        Resource: '*'
+managedNodeGroups:
+  - name: identity-test-nodegroup
+    labels: { role: workers }
+    instanceType: m5.large
+    desiredCapacity: 1
+    volumeSize: 30
+    privateNetworking: true

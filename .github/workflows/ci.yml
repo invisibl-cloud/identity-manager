@@ -1,18 +1,14 @@
-name: Continous Integration
+name: CI
 
 on:
   push:
     branches:
       - main
-      - develop
-      - devbuild-*
-      - v[0-9]+.[0-9]+.[0-9]+
     tags:
       - v[0-9]+.[0-9]+.[0-9]+
   pull_request:
     branches:
       - main
-      - develop
 
 jobs:
   build:
