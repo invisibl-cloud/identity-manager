@@ -6,18 +6,14 @@ linters:
   # https://golangci-lint.run/usage/linters/#enabled-by-default-linters
 
   enable:
-    - deadcode
     - revive
-    - deadcode
     - errcheck
     - gosimple
     - govet
     - ineffassign
     - staticcheck
-    - structcheck
     - typecheck
     - unused
-    - varcheck
     - gosec
     - gocyclo
 
@@ -44,7 +40,7 @@ linters-settings:
       disabled: false
     - name: package-comments
       severity: warning
-      disabled: false
+      disabled: true
     - name: blank-imports
       severity: warning
       disabled: false

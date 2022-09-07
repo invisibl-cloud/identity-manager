@@ -115,7 +115,7 @@ func (i *Client) createOrSync(roleName string) (*RoleStatus, error) {
 	return status, nil
 }
 
-//Create creates an IAM role in AWS, based on a spec
+// Create creates an IAM role in AWS, based on a spec
 func (i *Client) create(roleName string) (*RoleStatus, error) {
 	input := &iam.CreateRoleInput{RoleName: &roleName}
 	input.AssumeRolePolicyDocument = &i.role.Spec.AWS.AssumeRolePolicy // required
@@ -144,7 +144,7 @@ func (i *Client) create(roleName string) (*RoleStatus, error) {
 	return &RoleStatus{Name: *createRoleOutput.Role.RoleName, ARN: *createRoleOutput.Role.Arn}, nil
 }
 
-//Delete deletes an IAM role
+// Delete deletes an IAM role
 func (i *Client) delete(roleName string) error {
 	currentPolicies, err := i.listInlinePolicies(roleName)
 	if err != nil {
@@ -180,7 +180,7 @@ func (i *Client) delete(roleName string) error {
 	return err
 }
 
-//Sync synchronizes an AWS IAM Role to a spec
+// Sync synchronizes an AWS IAM Role to a spec
 func (i *Client) sync(roleName string) (*RoleStatus, error) {
 	getRoleOutput, err := i.iam.GetRole(&iam.GetRoleInput{
 		RoleName: &roleName,

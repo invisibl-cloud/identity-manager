@@ -1,5 +1,5 @@
 <div align="center">
-    <img src="docs/assets/logo.svg" height="350" width="600" alt="Identity Manager" style="padding-bottom: 20px" />
+    <img src="docs/assets/images/logo.svg" height="350" width="600" alt="Identity Manager" style="padding-bottom: 20px" />
 <br>
 <img src="https://github.com/invisibl-cloud/identity-manager/actions/workflows/ci.yml/badge.svg">
 <a href="https://github.com/invisibl-cloud/identity-manager/releases">
@@ -19,10 +19,10 @@ Identity Manager Operator guides, quick start, troubleshooting and reference doc
 ## Supported Cloud Platforms
 
 <a href="https://aws.amazon.com/">
-    <img src="docs/assets/aws.png" height="100" width="130" alt="Amazon AWS" style="padding-right: 20px" />
+    <img src="docs/assets/images/aws.png" height="100" width="130" alt="Amazon AWS" style="padding-right: 20px" />
 </a>
 <a href="https://azure.microsoft.com/">
-    <img src="docs/assets/azure.png" height="100" width="150" alt="Microsoft Azure" />
+    <img src="docs/assets/images/azure.png" height="100" width="150" alt="Microsoft Azure" />
 </a>
 
 ## Contributing
