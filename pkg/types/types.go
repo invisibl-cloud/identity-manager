@@ -25,10 +25,10 @@ type FinalizeReconciler interface {
 // ResourceBase is the interface that facilitates getters
 type ResourceBase interface {
 	client.Object
-	GetSpec() interface{}
-	GetSpecCopy() interface{}
-	GetStatus() interface{}
-	GetStatusCopy() interface{}
+	GetSpec() any
+	GetSpecCopy() any
+	GetStatus() any
+	GetStatusCopy() any
 }
 
 // Resource is the interface that facilitates getters
@@ -37,7 +37,7 @@ type Resource interface {
 	GetConditionedStatus() *v1alpha1.ConditionedStatus
 }
 
-// test whether the CRs implements Resource interface{}
+// test whether the CRs implements Resource any
 var (
 	_ = Resource(&v1alpha1.WorkloadIdentity{})
 )

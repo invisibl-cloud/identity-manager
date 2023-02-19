@@ -360,22 +360,22 @@ type Metadata struct {
 }
 
 // GetSpec returns spec of WorkloadIdentity
-func (r *WorkloadIdentity) GetSpec() interface{} {
+func (r *WorkloadIdentity) GetSpec() any {
 	return &r.Spec
 }
 
 // GetStatus returns status of WorkloadIdentity
-func (r *WorkloadIdentity) GetStatus() interface{} {
+func (r *WorkloadIdentity) GetStatus() any {
 	return &r.Status
 }
 
 // GetSpecCopy returns spec's copy of WorkloadIdentity
-func (r *WorkloadIdentity) GetSpecCopy() interface{} {
+func (r *WorkloadIdentity) GetSpecCopy() any {
 	return r.Spec.DeepCopy()
 }
 
 // GetStatusCopy returns status's copy of WorkloadIdentity
-func (r *WorkloadIdentity) GetStatusCopy() interface{} {
+func (r *WorkloadIdentity) GetStatusCopy() any {
 	return r.Status.DeepCopy()
 }
 
