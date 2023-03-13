@@ -1,3 +1,4 @@
+//go:generate mockery --name CosmosClient
 package cosmos
 
 import (

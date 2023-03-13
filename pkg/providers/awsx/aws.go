@@ -1,6 +1,8 @@
 package awsx
 
 import (
+	"flag"
+
 	"github.com/invisibl-cloud/identity-manager/pkg/util"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -8,8 +10,6 @@ import (
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/credentials/stscreds"
 	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/iam"
-	"github.com/aws/aws-sdk-go/service/sts"
 )
 
 const (
@@ -112,24 +112,12 @@ func CheckError(err error, codes ...string) (bool, bool) {
 	return false, false
 }
 
-// STS is the interface for the STS API calls
-type STS interface {
-	GetCallerIdentity(*sts.GetCallerIdentityInput) (*sts.GetCallerIdentityOutput, error)
+// Options of AWS
+type Options struct {
+	PermissionsBoundaryARN string
 }
 
-// IAM is the interface for the IAM API calls
-type IAM interface {
-	GetRole(*iam.GetRoleInput) (*iam.GetRoleOutput, error)
-	CreateRole(*iam.CreateRoleInput) (*iam.CreateRoleOutput, error)
-	DeleteRole(*iam.DeleteRoleInput) (*iam.DeleteRoleOutput, error)
-	UpdateRole(*iam.UpdateRoleInput) (*iam.UpdateRoleOutput, error)
-	UpdateRoleDescription(*iam.UpdateRoleDescriptionInput) (*iam.UpdateRoleDescriptionOutput, error)
-	ListRolePoliciesPages(*iam.ListRolePoliciesInput, func(*iam.ListRolePoliciesOutput, bool) bool) error
-	ListAttachedRolePoliciesPages(*iam.ListAttachedRolePoliciesInput, func(*iam.ListAttachedRolePoliciesOutput, bool) bool) error
-	DeleteRolePolicy(*iam.DeleteRolePolicyInput) (*iam.DeleteRolePolicyOutput, error)
-	DetachRolePolicy(*iam.DetachRolePolicyInput) (*iam.DetachRolePolicyOutput, error)
-	UpdateAssumeRolePolicy(*iam.UpdateAssumeRolePolicyInput) (*iam.UpdateAssumeRolePolicyOutput, error)
-	AttachRolePolicy(*iam.AttachRolePolicyInput) (*iam.AttachRolePolicyOutput, error)
-	PutRolePolicy(*iam.PutRolePolicyInput) (*iam.PutRolePolicyOutput, error)
-	PutRolePermissionsBoundary(input *iam.PutRolePermissionsBoundaryInput) (*iam.PutRolePermissionsBoundaryOutput, error)
+// BindFlags will parse the given flagset for aws arg flags.
+func (o *Options) BindFlags(fs *flag.FlagSet) {
+	flag.StringVar(&o.PermissionsBoundaryARN, "aws-permissions-boundary-arn", "", "The permissions boundary arn.")
 }

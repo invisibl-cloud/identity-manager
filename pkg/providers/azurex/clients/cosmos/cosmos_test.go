@@ -6,8 +6,8 @@ import (
 	"testing"
 
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/cosmos-db/mgmt/documentdb"
-	mocks "github.com/invisibl-cloud/identity-manager/pkg/mocks/azure"
 	"github.com/invisibl-cloud/identity-manager/pkg/providers/azurex"
+	"github.com/invisibl-cloud/identity-manager/pkg/providers/azurex/clients/cosmos/mocks"
 	"github.com/stretchr/testify/assert"
 )
 

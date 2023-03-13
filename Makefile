@@ -258,3 +258,6 @@ gen-crd-docs:
 			-config ./hack/api-docs/config.json \
 			-api-dir github.com/invisibl-cloud/identity-manager/api/v1alpha1 \
 			-out-file docs/api-specification.html
+
+gen:
+	go generate ./...

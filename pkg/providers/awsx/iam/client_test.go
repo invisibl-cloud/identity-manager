@@ -10,7 +10,9 @@ import (
 	"github.com/aws/aws-sdk-go/service/iam"
 	"github.com/aws/aws-sdk-go/service/sts"
 	v1alpha1 "github.com/invisibl-cloud/identity-manager/api/v1alpha1"
-	mocks "github.com/invisibl-cloud/identity-manager/pkg/mocks/aws"
+	"github.com/invisibl-cloud/identity-manager/pkg/options"
+	"github.com/invisibl-cloud/identity-manager/pkg/providers/awsx"
+	"github.com/invisibl-cloud/identity-manager/pkg/providers/awsx/mocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -376,9 +378,10 @@ func TestCreateOrUpdate(t *testing.T) {
 	for _, testCase := range testCases {
 		iamClient := &mocks.IAM{}
 		stsClient := &mocks.STS{}
+		options := &options.Options{AWS: &awsx.Options{}}
 		testCase.setupMockExpectations(iamClient, stsClient)
 
-		client, err := New(iamClient, stsClient, testCase.workloadIdentity)
+		client, err := New(iamClient, stsClient, testCase.workloadIdentity, options)
 		assert.Nil(t, err)
 
 		status, err := client.CreateOrUpdate(context.Background())
@@ -479,9 +482,10 @@ func TestDelete(t *testing.T) {
 	for _, testCase := range testCases {
 		iamClient := &mocks.IAM{}
 		stsClient := &mocks.STS{}
+		options := &options.Options{AWS: &awsx.Options{}}
 		testCase.setupMockExpectations(iamClient, stsClient)
 
-		client, err := New(iamClient, stsClient, testCase.workloadIdentity)
+		client, err := New(iamClient, stsClient, testCase.workloadIdentity, options)
 		assert.Nil(t, err)
 
 		err = client.Delete(context.Background())
@@ -492,6 +496,7 @@ func TestDelete(t *testing.T) {
 func TestListInlinePolicies(t *testing.T) {
 	iamClient := &mocks.IAM{}
 	stsClient := &mocks.STS{}
+	options := &options.Options{AWS: &awsx.Options{}}
 
 	stsClient.On("GetCallerIdentity", &sts.GetCallerIdentityInput{}).Return(
 		&sts.GetCallerIdentityOutput{
@@ -511,7 +516,7 @@ func TestListInlinePolicies(t *testing.T) {
 		arg(out, true)
 	})
 
-	client, err := New(iamClient, stsClient, &v1alpha1.WorkloadIdentity{})
+	client, err := New(iamClient, stsClient, &v1alpha1.WorkloadIdentity{}, options)
 	assert.Nil(t, err)
 
 	pols, err := client.listInlinePolicies("ccs-v2")

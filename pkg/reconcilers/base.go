@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/go-logr/logr"
+	"github.com/invisibl-cloud/identity-manager/pkg/options"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/record"
@@ -20,10 +21,11 @@ type ReconcilerBase struct {
 	restConfig *rest.Config
 	recorder   record.EventRecorder
 	apireader  client.Reader
+	options    *options.Options
 }
 
 // NewForManager expects name and manager.Manager and returns *ReconcilerBase
-func NewForManager(name string, mgr manager.Manager) *ReconcilerBase {
+func NewForManager(name string, mgr manager.Manager, options *options.Options) *ReconcilerBase {
 	return &ReconcilerBase{
 		name:       name,
 		scheme:     mgr.GetScheme(),
@@ -31,6 +33,7 @@ func NewForManager(name string, mgr manager.Manager) *ReconcilerBase {
 		restConfig: mgr.GetConfig(),
 		recorder:   mgr.GetEventRecorderFor(name),
 		apireader:  mgr.GetAPIReader(),
+		options:    options,
 	}
 }
 
@@ -52,4 +55,9 @@ func (r *ReconcilerBase) Scheme() *runtime.Scheme {
 // Client returns the Client of the ReconcilerBase
 func (r *ReconcilerBase) Client() client.Client {
 	return r.client
+}
+
+// Options returns Options from the ReconcilerBase
+func (r *ReconcilerBase) Options() *options.Options {
+	return r.options
 }

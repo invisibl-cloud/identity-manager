@@ -11,8 +11,10 @@ import (
 	"github.com/aws/aws-sdk-go/service/iam"
 	"github.com/aws/aws-sdk-go/service/sts"
 	"github.com/invisibl-cloud/identity-manager/api/v1alpha1"
-	mocks "github.com/invisibl-cloud/identity-manager/pkg/mocks/aws"
+	"github.com/invisibl-cloud/identity-manager/pkg/options"
+	"github.com/invisibl-cloud/identity-manager/pkg/providers/awsx"
 	iamx "github.com/invisibl-cloud/identity-manager/pkg/providers/awsx/iam"
+	"github.com/invisibl-cloud/identity-manager/pkg/providers/awsx/mocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -318,9 +320,10 @@ func TestAWSReconcile(t *testing.T) {
 
 		awsIAMClient := &mocks.IAM{}
 		awsSTSClient := &mocks.STS{}
+		options := &options.Options{AWS: &awsx.Options{}}
 		testCase.setupMockExpectations(awsIAMClient, awsSTSClient)
 
-		iamClient, err := iamx.New(awsIAMClient, awsSTSClient, testCase.workloadIdentity)
+		iamClient, err := iamx.New(awsIAMClient, awsSTSClient, testCase.workloadIdentity, options)
 		assert.Nil(t, err)
 		awsRec := &RoleReconciler{
 			Client:    k8sClient,

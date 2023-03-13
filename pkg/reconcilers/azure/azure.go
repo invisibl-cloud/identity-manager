@@ -118,7 +118,7 @@ func (r *IdentityReconciler) Reconcile(ctx context.Context) error {
 	}
 
 	if r.res.Spec.WriteToSecretRef != nil {
-		tmplData := map[string]interface{}{
+		tmplData := map[string]any{
 			"identity.id":          id.ID,
 			"identity.resourceID":  id.ID,
 			"identity.clientID":    id.ClientID,
@@ -151,7 +151,7 @@ func (r *IdentityReconciler) Reconcile(ctx context.Context) error {
 	return nil
 }
 
-func (r *IdentityReconciler) doSecret(ctx context.Context, tmplData map[string]interface{}, ref *v1alpha1.WriteToSecretRef) error {
+func (r *IdentityReconciler) doSecret(ctx context.Context, tmplData map[string]any, ref *v1alpha1.WriteToSecretRef) error {
 	s := &corev1.Secret{}
 	s.Name = ref.Name
 	s.Namespace = ref.Namespace
@@ -425,7 +425,7 @@ func (r *IdentityReconciler) doSyncKeyReconcile(ctx context.Context) error {
 		return err
 	}
 	for _, sk := range r.res.Spec.Azure.SyncKeys {
-		var tmplData map[string]interface{}
+		var tmplData map[string]any
 		switch sk.Source {
 		case v1alpha1.SyncKeySourceStorage:
 			tmplData, err = r.getStorageTmplData(ctx, c, sk)
@@ -448,7 +448,7 @@ func (r *IdentityReconciler) doSyncKeyReconcile(ctx context.Context) error {
 	return nil
 }
 
-func (r *IdentityReconciler) getStorageTmplData(ctx context.Context, c *azurex.Client, sk *v1alpha1.SyncKey) (map[string]interface{}, error) {
+func (r *IdentityReconciler) getStorageTmplData(ctx context.Context, c *azurex.Client, sk *v1alpha1.SyncKey) (map[string]any, error) {
 	storageAccountName, ok := sk.Params["name"]
 	if !ok {
 		return nil, fmt.Errorf("missing name in parameters")
@@ -457,12 +457,12 @@ func (r *IdentityReconciler) getStorageTmplData(ctx context.Context, c *azurex.C
 	if err != nil {
 		return nil, err
 	}
-	return map[string]interface{}{
+	return map[string]any{
 		"storageAccount.key": key,
 	}, nil
 }
 
-func (r *IdentityReconciler) getCosmosTmplData(ctx context.Context, c *azurex.Client, sk *v1alpha1.SyncKey) (map[string]interface{}, error) {
+func (r *IdentityReconciler) getCosmosTmplData(ctx context.Context, c *azurex.Client, sk *v1alpha1.SyncKey) (map[string]any, error) {
 	cosmosAccountName, ok := sk.Params["name"]
 	if !ok {
 		return nil, fmt.Errorf("missing name in parameters")
@@ -476,7 +476,7 @@ func (r *IdentityReconciler) getCosmosTmplData(ctx context.Context, c *azurex.Cl
 	if err != nil {
 		return nil, err
 	}
-	return map[string]interface{}{
+	return map[string]any{
 		"cosmosAccount.key":              key,
 		"cosmosAccount.connectionString": connString,
 	}, nil
