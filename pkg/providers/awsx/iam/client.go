@@ -123,11 +123,15 @@ func (i *Client) createOrSync(roleName string) (*RoleStatus, error) {
 
 // Create creates an IAM role in AWS, based on a spec
 func (i *Client) create(roleName string) (*RoleStatus, error) {
+	input := &iam.CreateRoleInput{RoleName: &roleName}
 	permissionsBoundaryARN := i.role.Spec.AWS.PermissionsBoundaryARN
-	if i.options != nil && permissionsBoundaryARN == "" {
-		permissionsBoundaryARN = i.options.AWS.PermissionsBoundaryARN
+	if permissionsBoundaryARN != "" {
+		input.PermissionsBoundary = aws.String(permissionsBoundaryARN)
+	} else {
+		if i.options != nil && i.options.AWS != nil && i.options.AWS.PermissionsBoundaryARN != "" {
+			input.PermissionsBoundary = aws.String(i.options.AWS.PermissionsBoundaryARN)
+		}
 	}
-	input := &iam.CreateRoleInput{RoleName: &roleName, PermissionsBoundary: aws.String(permissionsBoundaryARN)}
 	input.AssumeRolePolicyDocument = &i.role.Spec.AWS.AssumeRolePolicy // required
 	if i.role.Spec.Description != "" {
 		input.Description = &i.role.Spec.Description

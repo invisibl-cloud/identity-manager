@@ -57,7 +57,7 @@ func (r *ReconcilerBase) Client() client.Client {
 	return r.client
 }
 
-// ArgFlags returns ArgFlags of the ReconcilerBase
+// Options returns Options from the ReconcilerBase
 func (r *ReconcilerBase) Options() *options.Options {
 	return r.options
 }
