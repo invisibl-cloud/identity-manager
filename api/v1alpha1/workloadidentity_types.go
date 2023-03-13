@@ -117,6 +117,9 @@ type WorkloadIdentityAzure struct {
 	// IdentityBinding of the WorkloadIdentity
 	// +optional
 	IdentityBinding *AzureIdentityBinding `json:"identityBinding,omitempty"`
+	// SyncKeys of the WorkloadIdentity
+	// +optional
+	SyncKeys []*SyncKey `json:"syncKeys,omitempty"`
 }
 
 // RoleDefinition is the definition for a Role
@@ -237,6 +240,9 @@ type WorkloadIdentityAWS struct {
 	// Pods to be managed
 	// +optional
 	Pods []*AwsRoleSpecPod `json:"pods,omitempty"`
+	// PermissionsBoundary of the role
+	// +optional
+	PermissionsBoundary string `json:"permissionsBoundary,omitempty"`
 }
 
 // AwsRoleSpecPod defines the AWS's role spec pod
@@ -300,6 +306,31 @@ type ExternalResource struct {
 	// +optional
 	Type string `json:"type,omitempty"`
 }
+
+// SyncKey is the sync key's definition
+type SyncKey struct {
+	// Source of the sync key
+	// +optional
+	Source SyncKeySource `json:"source,omitempty"`
+	// Parameters of the sync key
+	// +optional
+	Params map[string]string `json:"params,omitempty"`
+	// WriteToSecretRef is a reference to a secret
+	// +optional
+	WriteToSecretRef *WriteToSecretRef `json:"writeToSecretRef,omitempty"`
+}
+
+// A SyncKeySource indicates type of the azure resource keys to synced
+type SyncKeySource string
+
+const (
+	// SyncKeySourceStorage indicates azure resource type storage
+	SyncKeySourceStorage SyncKeySource = "Storage"
+	// SyncKeySourceCosmos indicates azure resource type cosmos
+	SyncKeySourceCosmos SyncKeySource = "Cosmos"
+	// SyncKeySourceDefault indicates no resource type
+	SyncKeySourceDefault SyncKeySource = ""
+)
 
 // WorkloadIdentityStatus defines the observed state of WorkloadIdentity
 type WorkloadIdentityStatus struct {
