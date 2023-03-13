@@ -10,6 +10,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/iam"
 	"github.com/aws/aws-sdk-go/service/sts"
 	v1alpha1 "github.com/invisibl-cloud/identity-manager/api/v1alpha1"
+	"github.com/invisibl-cloud/identity-manager/pkg/options"
 	"github.com/invisibl-cloud/identity-manager/pkg/providers/awsx"
 	"github.com/invisibl-cloud/identity-manager/pkg/providers/awsx/mocks"
 	"github.com/stretchr/testify/assert"
@@ -377,7 +378,7 @@ func TestCreateOrUpdate(t *testing.T) {
 	for _, testCase := range testCases {
 		iamClient := &mocks.IAM{}
 		stsClient := &mocks.STS{}
-		options := &awsx.Options{}
+		options := &options.Options{AWS: &awsx.Options{}}
 		testCase.setupMockExpectations(iamClient, stsClient)
 
 		client, err := New(iamClient, stsClient, testCase.workloadIdentity, options)
@@ -481,7 +482,7 @@ func TestDelete(t *testing.T) {
 	for _, testCase := range testCases {
 		iamClient := &mocks.IAM{}
 		stsClient := &mocks.STS{}
-		options := &awsx.Options{}
+		options := &options.Options{AWS: &awsx.Options{}}
 		testCase.setupMockExpectations(iamClient, stsClient)
 
 		client, err := New(iamClient, stsClient, testCase.workloadIdentity, options)
@@ -495,7 +496,7 @@ func TestDelete(t *testing.T) {
 func TestListInlinePolicies(t *testing.T) {
 	iamClient := &mocks.IAM{}
 	stsClient := &mocks.STS{}
-	options := &awsx.Options{}
+	options := &options.Options{AWS: &awsx.Options{}}
 
 	stsClient.On("GetCallerIdentity", &sts.GetCallerIdentityInput{}).Return(
 		&sts.GetCallerIdentityOutput{

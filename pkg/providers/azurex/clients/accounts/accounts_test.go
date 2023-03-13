@@ -6,8 +6,8 @@ import (
 
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/storage/mgmt/storage"
 	"github.com/Azure/go-autorest/autorest/to"
-	mocks "github.com/invisibl-cloud/identity-manager/pkg/mocks/azure"
 	"github.com/invisibl-cloud/identity-manager/pkg/providers/azurex"
+	"github.com/invisibl-cloud/identity-manager/pkg/providers/azurex/clients/accounts/mocks"
 	"github.com/stretchr/testify/assert"
 )
 

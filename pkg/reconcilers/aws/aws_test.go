@@ -11,6 +11,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/iam"
 	"github.com/aws/aws-sdk-go/service/sts"
 	"github.com/invisibl-cloud/identity-manager/api/v1alpha1"
+	"github.com/invisibl-cloud/identity-manager/pkg/options"
 	"github.com/invisibl-cloud/identity-manager/pkg/providers/awsx"
 	iamx "github.com/invisibl-cloud/identity-manager/pkg/providers/awsx/iam"
 	"github.com/invisibl-cloud/identity-manager/pkg/providers/awsx/mocks"
@@ -319,7 +320,7 @@ func TestAWSReconcile(t *testing.T) {
 
 		awsIAMClient := &mocks.IAM{}
 		awsSTSClient := &mocks.STS{}
-		options := &awsx.Options{}
+		options := &options.Options{AWS: &awsx.Options{}}
 		testCase.setupMockExpectations(awsIAMClient, awsSTSClient)
 
 		iamClient, err := iamx.New(awsIAMClient, awsSTSClient, testCase.workloadIdentity, options)

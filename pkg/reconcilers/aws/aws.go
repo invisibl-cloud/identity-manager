@@ -68,7 +68,7 @@ func (r *RoleReconciler) Prepare(ctx context.Context) error {
 	iamC := iam.New(sess)
 	stsC := sts.New(sess)
 
-	iamClient, err := iamc.New(iamC, stsC, r.res, r.options.AWS)
+	iamClient, err := iamc.New(iamC, stsC, r.res, r.options)
 	if err != nil {
 		return err
 	}

@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	v1alpha1 "github.com/invisibl-cloud/identity-manager/api/v1alpha1"
+	"github.com/invisibl-cloud/identity-manager/pkg/options"
 	"github.com/invisibl-cloud/identity-manager/pkg/providers/awsx"
 	"github.com/invisibl-cloud/identity-manager/pkg/util"
 
@@ -29,13 +30,13 @@ type Client struct {
 	iam       awsx.IAM
 	sts       awsx.STS
 	role      *v1alpha1.WorkloadIdentity
-	options   *awsx.Options
+	options   *options.Options
 	accountID string
 }
 
 // New expects wrapped iam client, wrapped sts client, workload identity and
 // returns them by packing them together
-func New(iamClient awsx.IAM, stsClient awsx.STS, role *v1alpha1.WorkloadIdentity, options *awsx.Options) (*Client, error) {
+func New(iamClient awsx.IAM, stsClient awsx.STS, role *v1alpha1.WorkloadIdentity, options *options.Options) (*Client, error) {
 	callerIdentity, err := stsClient.GetCallerIdentity(&sts.GetCallerIdentityInput{})
 	if err != nil {
 		return nil, err
@@ -45,13 +46,13 @@ func New(iamClient awsx.IAM, stsClient awsx.STS, role *v1alpha1.WorkloadIdentity
 		iam:       iamClient,
 		sts:       stsClient,
 		role:      role,
+		options:   options,
 		accountID: aws.StringValue(callerIdentity.Account),
 	}, nil
 }
 
 func (i *Client) internalRoleName() string {
-	meta := i.role.ObjectMeta
-	return meta.GetNamespace() + "-" + meta.GetName()
+	return i.role.GetNamespace() + "-" + i.role.GetName()
 }
 
 func (i *Client) roleName() string {
@@ -59,10 +60,14 @@ func (i *Client) roleName() string {
 	if roleName == "" {
 		roleName = i.internalRoleName()
 	}
+	// global prefix
+	if i.options != nil && i.options.NamePrefix != "" {
+		roleName = i.options.NamePrefix + i.internalRoleName()
+	}
+	// per role prefix
 	if strings.HasSuffix(roleName, "-") { // prefix based
 		roleName = roleName + i.internalRoleName()
 	}
-
 	// max 64 char
 	if len(roleName) > 64 {
 		return roleName[:64]
@@ -119,8 +124,8 @@ func (i *Client) createOrSync(roleName string) (*RoleStatus, error) {
 // Create creates an IAM role in AWS, based on a spec
 func (i *Client) create(roleName string) (*RoleStatus, error) {
 	permissionsBoundaryARN := i.role.Spec.AWS.PermissionsBoundaryARN
-	if permissionsBoundaryARN == "" {
-		permissionsBoundaryARN = i.options.PermissionsBoundaryARN
+	if i.options != nil && permissionsBoundaryARN == "" {
+		permissionsBoundaryARN = i.options.AWS.PermissionsBoundaryARN
 	}
 	input := &iam.CreateRoleInput{RoleName: &roleName, PermissionsBoundary: aws.String(permissionsBoundaryARN)}
 	input.AssumeRolePolicyDocument = &i.role.Spec.AWS.AssumeRolePolicy // required
@@ -247,38 +252,51 @@ func (i *Client) sync(roleName string) (*RoleStatus, error) {
 	}
 
 	// sync permissions boundary
+	err = i.syncPermissionsBoundary(awsRole, roleName)
+	if err != nil {
+		return nil, err
+	}
+
+	return &RoleStatus{Name: roleName, ARN: aws.StringValue(awsRole.Arn)}, nil
+}
+
+func (i *Client) syncPermissionsBoundary(awsRole *iam.Role, roleName string) error {
 	existingPermissionBoundary := awsRole.PermissionsBoundary
 	currentPermissionsBoundary := i.role.Spec.AWS.PermissionsBoundaryARN
+
+	// if current permission boundary is present
 	if currentPermissionsBoundary != "" {
 		permissionsBoundaryARN := currentPermissionsBoundary
-		if permissionsBoundaryARN == "" {
-			permissionsBoundaryARN = i.options.PermissionsBoundaryARN
+		if i.options.AWS != nil && permissionsBoundaryARN == "" {
+			permissionsBoundaryARN = i.options.AWS.PermissionsBoundaryARN
 		}
 		needsUpdate := existingPermissionBoundary == nil
 		if existingPermissionBoundary != nil {
 			needsUpdate = aws.StringValue(existingPermissionBoundary.PermissionsBoundaryArn) != permissionsBoundaryARN
 		}
 		if needsUpdate {
-			_, err = i.iam.PutRolePermissionsBoundary(&iam.PutRolePermissionsBoundaryInput{
+			_, err := i.iam.PutRolePermissionsBoundary(&iam.PutRolePermissionsBoundaryInput{
 				RoleName:            &roleName,
 				PermissionsBoundary: &permissionsBoundaryARN,
 			})
 			if err != nil {
-				return nil, err
+				return err
 			}
 		}
-	} else {
-		if existingPermissionBoundary != nil {
-			_, err = i.iam.DeleteRolePermissionsBoundary(&iam.DeleteRolePermissionsBoundaryInput{
-				RoleName: &roleName,
-			})
-			if err != nil {
-				return nil, err
-			}
-		}
+		return nil
 	}
 
-	return &RoleStatus{Name: roleName, ARN: aws.StringValue(awsRole.Arn)}, nil
+	// if current permissions boundary is not present
+	// but existing role has permission boundary - so delete it.
+	if existingPermissionBoundary != nil {
+		_, err := i.iam.DeleteRolePermissionsBoundary(&iam.DeleteRolePermissionsBoundaryInput{
+			RoleName: &roleName,
+		})
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (i *Client) syncInlinePolicies(roleName string) error {
