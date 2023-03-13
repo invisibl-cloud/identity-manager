@@ -52,6 +52,9 @@ spec:
                     default: /
                     description: Path of the Role
                     type: string
+                  permissionsBoundary:
+                    description: PermissionsBoundary of the role
+                    type: string
                   pods:
                     description: Pods to be managed
                     items:
@@ -283,6 +286,40 @@ spec:
                       - id
                       - permissions
                       - roleName
+                      type: object
+                    type: array
+                  syncKeys:
+                    description: SyncKeys of the WorkloadIdentity
+                    items:
+                      description: SyncKey is the sync key's definition
+                      properties:
+                        params:
+                          additionalProperties:
+                            type: string
+                          description: Parameters of the sync key
+                          type: object
+                        source:
+                          description: Source of the sync key
+                          type: string
+                        writeToSecretRef:
+                          description: WriteToSecretRef is a reference to a secret
+                          properties:
+                            name:
+                              description: Name of the secret
+                              type: string
+                            namespace:
+                              description: Namespace of the secret
+                              type: string
+                            templateData:
+                              additionalProperties:
+                                type: string
+                              description: TemplateData is a template for the data
+                                to be written to the secret
+                              type: object
+                          required:
+                          - name
+                          - templateData
+                          type: object
                       type: object
                     type: array
                 type: object
