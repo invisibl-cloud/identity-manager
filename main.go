@@ -34,6 +34,7 @@ import (
 
 	identitymanageriov1alpha1 "github.com/invisibl-cloud/identity-manager/api/v1alpha1"
 	"github.com/invisibl-cloud/identity-manager/controllers"
+	"github.com/invisibl-cloud/identity-manager/pkg/options"
 	"github.com/invisibl-cloud/identity-manager/pkg/reconcilers"
 	//+kubebuilder:scaffold:imports
 )
@@ -66,6 +67,8 @@ func main() {
 		Development: true,
 	}
 	opts.BindFlags(flag.CommandLine)
+	options := options.NewOptions()
+	options.BindFlags(flag.CommandLine)
 	flag.Parse()
 
 	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
@@ -84,7 +87,7 @@ func main() {
 	}
 
 	if err = (&controllers.WorkloadIdentityReconciler{
-		Base: reconcilers.NewForManager("WorkloadIdentity", mgr),
+		Base: reconcilers.NewForManager("WorkloadIdentity", mgr, options),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "WorkloadIdentity")
 		os.Exit(1)

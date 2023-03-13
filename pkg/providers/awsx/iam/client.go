@@ -29,12 +29,13 @@ type Client struct {
 	iam       awsx.IAM
 	sts       awsx.STS
 	role      *v1alpha1.WorkloadIdentity
+	options   *awsx.Options
 	accountID string
 }
 
 // New expects wrapped iam client, wrapped sts client, workload identity and
 // returns them by packing them together
-func New(iamClient awsx.IAM, stsClient awsx.STS, role *v1alpha1.WorkloadIdentity) (*Client, error) {
+func New(iamClient awsx.IAM, stsClient awsx.STS, role *v1alpha1.WorkloadIdentity, options *awsx.Options) (*Client, error) {
 	callerIdentity, err := stsClient.GetCallerIdentity(&sts.GetCallerIdentityInput{})
 	if err != nil {
 		return nil, err
@@ -117,7 +118,11 @@ func (i *Client) createOrSync(roleName string) (*RoleStatus, error) {
 
 // Create creates an IAM role in AWS, based on a spec
 func (i *Client) create(roleName string) (*RoleStatus, error) {
-	input := &iam.CreateRoleInput{RoleName: &roleName}
+	permissionsBoundaryARN := i.role.Spec.AWS.PermissionsBoundaryARN
+	if permissionsBoundaryARN == "" {
+		permissionsBoundaryARN = i.options.PermissionsBoundaryARN
+	}
+	input := &iam.CreateRoleInput{RoleName: &roleName, PermissionsBoundary: aws.String(permissionsBoundaryARN)}
 	input.AssumeRolePolicyDocument = &i.role.Spec.AWS.AssumeRolePolicy // required
 	if i.role.Spec.Description != "" {
 		input.Description = &i.role.Spec.Description
@@ -127,9 +132,6 @@ func (i *Client) create(roleName string) (*RoleStatus, error) {
 	}
 	if i.role.Spec.AWS.MaxSessionDuration > 0 {
 		input.MaxSessionDuration = &i.role.Spec.AWS.MaxSessionDuration
-	}
-	if i.role.Spec.AWS.PermissionsBoundary != "" {
-		input.PermissionsBoundary = &i.role.Spec.AWS.PermissionsBoundary
 	}
 	// input.Tags
 	createRoleOutput, err := i.iam.CreateRole(input)
@@ -245,13 +247,34 @@ func (i *Client) sync(roleName string) (*RoleStatus, error) {
 	}
 
 	// sync permissions boundary
-	if i.role.Spec.AWS.PermissionsBoundary != "" && aws.StringValue(awsRole.PermissionsBoundary.PermissionsBoundaryArn) != i.role.Spec.AWS.PermissionsBoundary {
-		_, err = i.iam.PutRolePermissionsBoundary(&iam.PutRolePermissionsBoundaryInput{
-			RoleName:            &roleName,
-			PermissionsBoundary: &i.role.Spec.AWS.PermissionsBoundary,
-		})
-		if err != nil {
-			return nil, err
+	existingPermissionBoundary := awsRole.PermissionsBoundary
+	currentPermissionsBoundary := i.role.Spec.AWS.PermissionsBoundaryARN
+	if currentPermissionsBoundary != "" {
+		permissionsBoundaryARN := currentPermissionsBoundary
+		if permissionsBoundaryARN == "" {
+			permissionsBoundaryARN = i.options.PermissionsBoundaryARN
+		}
+		needsUpdate := existingPermissionBoundary == nil
+		if existingPermissionBoundary != nil {
+			needsUpdate = aws.StringValue(existingPermissionBoundary.PermissionsBoundaryArn) != permissionsBoundaryARN
+		}
+		if needsUpdate {
+			_, err = i.iam.PutRolePermissionsBoundary(&iam.PutRolePermissionsBoundaryInput{
+				RoleName:            &roleName,
+				PermissionsBoundary: &permissionsBoundaryARN,
+			})
+			if err != nil {
+				return nil, err
+			}
+		}
+	} else {
+		if existingPermissionBoundary != nil {
+			_, err = i.iam.DeleteRolePermissionsBoundary(&iam.DeleteRolePermissionsBoundaryInput{
+				RoleName: &roleName,
+			})
+			if err != nil {
+				return nil, err
+			}
 		}
 	}
 

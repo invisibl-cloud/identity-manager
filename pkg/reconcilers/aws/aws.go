@@ -9,6 +9,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/sts"
 
 	"github.com/invisibl-cloud/identity-manager/api/v1alpha1"
+	"github.com/invisibl-cloud/identity-manager/pkg/options"
 	"github.com/invisibl-cloud/identity-manager/pkg/providers/awsx"
 	iamc "github.com/invisibl-cloud/identity-manager/pkg/providers/awsx/iam"
 	"github.com/invisibl-cloud/identity-manager/pkg/reconcilers"
@@ -35,8 +36,9 @@ const managedByValueKey = "managed"
 // required fields that are need to reconcile
 type RoleReconciler struct {
 	client.Client
-	scheme *runtime.Scheme
-	res    *v1alpha1.WorkloadIdentity
+	scheme  *runtime.Scheme
+	options *options.Options
+	res     *v1alpha1.WorkloadIdentity
 	// internal
 	iamClient *iamc.Client
 }
@@ -45,9 +47,10 @@ type RoleReconciler struct {
 // and returns a new RoleReconciler object
 func NewRoleReconciler(base *reconcilers.ReconcilerBase, res *v1alpha1.WorkloadIdentity) *RoleReconciler {
 	return &RoleReconciler{
-		Client: base.Client(),
-		scheme: base.Scheme(),
-		res:    res,
+		Client:  base.Client(),
+		scheme:  base.Scheme(),
+		res:     res,
+		options: base.Options(),
 	}
 }
 
@@ -65,7 +68,7 @@ func (r *RoleReconciler) Prepare(ctx context.Context) error {
 	iamC := iam.New(sess)
 	stsC := sts.New(sess)
 
-	iamClient, err := iamc.New(iamC, stsC, r.res)
+	iamClient, err := iamc.New(iamC, stsC, r.res, r.options.AWS)
 	if err != nil {
 		return err
 	}

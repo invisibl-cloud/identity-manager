@@ -1,3 +1,4 @@
+//go:generate mockery --name AccountsClient
 package accounts
 
 import (
