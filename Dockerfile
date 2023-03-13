@@ -1,4 +1,4 @@
-FROM golang:1.17.11 as builder
+FROM golang:1.19 as builder
 WORKDIR /app
 ARG TARGETOS
 ARG TARGETARCH

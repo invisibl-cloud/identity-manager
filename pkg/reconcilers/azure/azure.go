@@ -67,7 +67,7 @@ func (r *IdentityReconciler) getAzurex(ctx context.Context) (*azurex.Client, err
 	if creds == nil {
 		return azurex.New(azurex.WithEnv())
 	}
-	configMap := map[string]interface{}{}
+	configMap := map[string]any{}
 	switch creds.Source {
 	case v1alpha1.CredentialsSourceSecret:
 		if creds.SecretRef == nil {
@@ -231,7 +231,7 @@ func (r *IdentityReconciler) doAzureIdentity(ctx context.Context, id *msi.Identi
 			}
 		}
 		o := u.UnstructuredContent()
-		o["spec"] = map[string]interface{}{
+		o["spec"] = map[string]any{
 			"type":       itype,
 			"resourceID": r.res.Status.ID,
 			"clientID":   id.ClientID,
@@ -298,7 +298,7 @@ func (r *IdentityReconciler) doAzureIdentityBinding(ctx context.Context, aid *un
 			}
 		}
 		o := u.UnstructuredContent()
-		o["spec"] = map[string]interface{}{
+		o["spec"] = map[string]any{
 			"azureIdentity": aid.GetName(),
 			"selector":      selector,
 		}

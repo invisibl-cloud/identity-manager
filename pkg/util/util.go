@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"sort"
 
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
@@ -61,6 +62,7 @@ func ToArray(m map[string]bool) []string {
 		arr[i] = v
 		i++
 	}
+	sort.Strings(arr)
 	return arr
 }
 

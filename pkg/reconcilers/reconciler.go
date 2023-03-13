@@ -58,8 +58,8 @@ type reconciler struct {
 	// custom
 	resCopy client.Object
 	// internal
-	specCopy   interface{}
-	statusCopy interface{}
+	specCopy   any
+	statusCopy any
 }
 
 // Reconcile implements Reconciler
@@ -145,7 +145,7 @@ func (r *reconciler) getRequeueAfter(requeueAfter time.Duration) time.Duration {
 	return time.Duration(secs.Int64()) * time.Second
 }
 
-func (r *reconciler) isResourceUpdated(spec interface{}) bool {
+func (r *reconciler) isResourceUpdated(spec any) bool {
 	return !equality.Semantic.DeepEqual(r.resCopy.GetAnnotations(), r.res.GetAnnotations()) ||
 		!equality.Semantic.DeepEqual(r.resCopy.GetLabels(), r.res.GetLabels()) ||
 		!equality.Semantic.DeepEqual(r.resCopy.GetFinalizers(), r.res.GetFinalizers()) ||

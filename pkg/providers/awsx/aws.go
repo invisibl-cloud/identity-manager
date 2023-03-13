@@ -124,7 +124,6 @@ type IAM interface {
 	DeleteRole(*iam.DeleteRoleInput) (*iam.DeleteRoleOutput, error)
 	UpdateRole(*iam.UpdateRoleInput) (*iam.UpdateRoleOutput, error)
 	UpdateRoleDescription(*iam.UpdateRoleDescriptionInput) (*iam.UpdateRoleDescriptionOutput, error)
-
 	ListRolePoliciesPages(*iam.ListRolePoliciesInput, func(*iam.ListRolePoliciesOutput, bool) bool) error
 	ListAttachedRolePoliciesPages(*iam.ListAttachedRolePoliciesInput, func(*iam.ListAttachedRolePoliciesOutput, bool) bool) error
 	DeleteRolePolicy(*iam.DeleteRolePolicyInput) (*iam.DeleteRolePolicyOutput, error)

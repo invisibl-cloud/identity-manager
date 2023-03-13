@@ -22,7 +22,7 @@ type Option func(*Client) error
 
 // WithConfigMapFunc executes fn and returns Option with
 // fn's returned map value
-func WithConfigMapFunc(fn func() (map[string]interface{}, error)) Option {
+func WithConfigMapFunc(fn func() (map[string]any, error)) Option {
 	return func(x *Client) error {
 		data, err := fn()
 		if err != nil {
@@ -36,7 +36,7 @@ func WithConfigMapFunc(fn func() (map[string]interface{}, error)) Option {
 // Option with a populated map
 func WithConfigData(data []byte) Option {
 	return func(x *Client) error {
-		m := map[string]interface{}{}
+		m := map[string]any{}
 		err := json.Unmarshal(data, &m)
 		if err != nil {
 			return err
@@ -67,7 +67,7 @@ func WithEnv() Option {
 
 // WithConfigMap expects map[string]interface
 // and returns Option
-func WithConfigMap(m map[string]interface{}) Option {
+func WithConfigMap(m map[string]any) Option {
 	return func(x *Client) error {
 		// if region found, set it in location
 		if region, ok := m["region"]; ok {

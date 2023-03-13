@@ -25,6 +25,9 @@ spec:
         aadpodidbinding: {{ include "identity-manager.aadpodidbinding" . }}
         {{- end }}
         {{- include "identity-manager.selectorLabels" . | nindent 8 }}
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
     spec:
       {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
