@@ -44,6 +44,9 @@ type WorkloadIdentitySpec struct {
 	// WriteToSecretRef is a reference to a secret
 	// +optional
 	WriteToSecretRef *WriteToSecretRef `json:"writeToSecretRef,omitempty"`
+	// Tags of WorkloadIdentity
+	// +optional
+	Tags map[string]string `json:"tags,omitempty"`
 }
 
 // WriteToSecretRef is a reference to a secret

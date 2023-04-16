@@ -16,12 +16,12 @@ type Options struct {
 
 // NewOptions creates new Options
 func NewOptions() *Options {
-	return &Options{AWS: &awsx.Options{}}
+	return &Options{Tags: map[string]string{}, AWS: &awsx.Options{}}
 }
 
 // BindFlags will parse the given flagset for reconciler flags.
 func (o *Options) BindFlags(fs *flag.FlagSet) {
-	flag.Var(&o.Tags, "tags", "The resource tags.")
+	flag.Var(&o.Tags, "tag", "The resource tags. format: key=value")
 	flag.StringVar(&o.NamePrefix, "name-prefix", "", "The resource name prefix.")
 	o.AWS.BindFlags(fs)
 }

@@ -6,12 +6,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/url"
+	"sort"
 	"strings"
 
 	v1alpha1 "github.com/invisibl-cloud/identity-manager/api/v1alpha1"
 	"github.com/invisibl-cloud/identity-manager/pkg/options"
 	"github.com/invisibl-cloud/identity-manager/pkg/providers/awsx"
 	"github.com/invisibl-cloud/identity-manager/pkg/util"
+	"k8s.io/apimachinery/pkg/api/equality"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/iam"
@@ -62,11 +64,9 @@ func (i *Client) roleName() string {
 	}
 	// global prefix
 	if i.options != nil && i.options.NamePrefix != "" {
-		roleName = i.options.NamePrefix + i.internalRoleName()
-	}
-	// per role prefix
-	if strings.HasSuffix(roleName, "-") { // prefix based
-		roleName = roleName + i.internalRoleName()
+		if !strings.HasPrefix(roleName, i.options.NamePrefix) {
+			roleName = i.options.NamePrefix + roleName
+		}
 	}
 	// max 64 char
 	if len(roleName) > 64 {
@@ -79,6 +79,7 @@ func (i *Client) roleName() string {
 func (i *Client) CreateOrUpdate(ctx context.Context) (*RoleStatus, error) {
 	prevRoleName := i.role.Status.Name
 	newRoleName := i.roleName()
+	// delete old role if name got changed
 	if prevRoleName != "" && prevRoleName != newRoleName {
 		if i.isExists(prevRoleName) {
 			err := i.delete(prevRoleName)
@@ -121,6 +122,44 @@ func (i *Client) createOrSync(roleName string) (*RoleStatus, error) {
 	return status, nil
 }
 
+func (i *Client) getTags(awsRole *iam.Role) ([]*iam.Tag, bool) {
+	existingTags := map[string]string{}
+	if awsRole != nil {
+		for _, t := range awsRole.Tags {
+			existingTags[aws.StringValue(t.Key)] = aws.StringValue(t.Value)
+		}
+	}
+	tags := []*iam.Tag{}
+	tmap := map[string]string{}
+	tkeys := []string{}
+	if i.options != nil && len(i.options.Tags) > 0 {
+		for k, v := range i.options.Tags {
+			tmap[k] = v
+			tkeys = append(tkeys, k)
+		}
+	}
+	if len(i.role.Spec.Tags) > 0 {
+		for k, v := range i.role.Spec.Tags {
+			tmap[k] = v
+			tkeys = append(tkeys, k)
+		}
+	}
+	if len(tkeys) == 0 {
+		if len(existingTags) == 0 {
+			return nil, false
+		}
+		return nil, true
+	}
+	sort.Strings(tkeys)
+	for _, k := range tkeys {
+		tags = append(tags, &iam.Tag{
+			Key:   aws.String(k),
+			Value: aws.String(tmap[k]),
+		})
+	}
+	return tags, equality.Semantic.DeepEqual(existingTags, tmap)
+}
+
 // Create creates an IAM role in AWS, based on a spec
 func (i *Client) create(roleName string) (*RoleStatus, error) {
 	input := &iam.CreateRoleInput{RoleName: &roleName}
@@ -142,7 +181,7 @@ func (i *Client) create(roleName string) (*RoleStatus, error) {
 	if i.role.Spec.AWS.MaxSessionDuration > 0 {
 		input.MaxSessionDuration = &i.role.Spec.AWS.MaxSessionDuration
 	}
-	// input.Tags
+	input.Tags, _ = i.getTags(nil)
 	createRoleOutput, err := i.iam.CreateRole(input)
 	if err != nil {
 		return nil, err
@@ -261,7 +300,28 @@ func (i *Client) sync(roleName string) (*RoleStatus, error) {
 		return nil, err
 	}
 
+	// sync tags
+	err = i.syncTags(awsRole, roleName)
+	if err != nil {
+		return nil, err
+	}
+
 	return &RoleStatus{Name: roleName, ARN: aws.StringValue(awsRole.Arn)}, nil
+}
+
+func (i *Client) syncTags(awsRole *iam.Role, roleName string) error {
+	tags, needsUpdate := i.getTags(awsRole)
+	if !needsUpdate {
+		return nil
+	}
+	_, err := i.iam.TagRole(&iam.TagRoleInput{
+		RoleName: &roleName,
+		Tags:     tags,
+	})
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func (i *Client) syncPermissionsBoundary(awsRole *iam.Role, roleName string) error {
@@ -278,14 +338,15 @@ func (i *Client) syncPermissionsBoundary(awsRole *iam.Role, roleName string) err
 		if existingPermissionBoundary != nil {
 			needsUpdate = aws.StringValue(existingPermissionBoundary.PermissionsBoundaryArn) != permissionsBoundaryARN
 		}
-		if needsUpdate {
-			_, err := i.iam.PutRolePermissionsBoundary(&iam.PutRolePermissionsBoundaryInput{
-				RoleName:            &roleName,
-				PermissionsBoundary: &permissionsBoundaryARN,
-			})
-			if err != nil {
-				return err
-			}
+		if !needsUpdate {
+			return nil
+		}
+		_, err := i.iam.PutRolePermissionsBoundary(&iam.PutRolePermissionsBoundaryInput{
+			RoleName:            &roleName,
+			PermissionsBoundary: &permissionsBoundaryARN,
+		})
+		if err != nil {
+			return err
 		}
 		return nil
 	}

@@ -43,19 +43,6 @@ func TestRoleName(t *testing.T) {
 			},
 			expectedRoleName: "dev-SomeInternalName",
 		},
-		{
-			desc: "Role name with '-' as suffix",
-			workloadIdentity: &v1alpha1.WorkloadIdentity{
-				Spec: v1alpha1.WorkloadIdentitySpec{
-					Name: "S3InventoryRole-",
-				},
-				ObjectMeta: v1.ObjectMeta{
-					Name:      "SomeInternalName",
-					Namespace: "dev",
-				},
-			},
-			expectedRoleName: "S3InventoryRole-dev-SomeInternalName",
-		},
 	}
 
 	for _, testCase := range testCases {

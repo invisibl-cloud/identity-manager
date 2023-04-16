@@ -4,118 +4,74 @@ on:
   push:
     branches:
       - main
+      - "[0-9]+.[0-9]+.[0-9]+-*"
+      - "[0-9]+.[0-9]+.[0-9]+"
     tags:
       - v[0-9]+.[0-9]+.[0-9]+
-  pull_request:
-    branches:
-      - main
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
       - name: Checkout Code
         uses: actions/checkout@v3
-      - name: Install Go
-        uses: actions/setup-go@v3
-        with:
-          go-version: 1.19.x
       - name: Determine Build Information
         id: buildinfo
-        env:
-          DOCKER_IMAGES: "${{ secrets.DOCKER_REPO }}"
         run: |
+          target=linux/amd64
+          case $GITHUB_REF in
+            *-arm64*) target=linux/arm64;;
+          esac
           case $GITHUB_REF in
             refs/tags/*)  VERSION=${GITHUB_REF#refs/tags/};;
             refs/heads/*) VERSION=$(echo ${GITHUB_REF#refs/heads/} | sed -r 's#/+#-#g')-${GITHUB_SHA::7};;
             refs/pull/*)  VERSION=pr-${{ github.event.number }}-${GITHUB_SHA::7};;
             *)            VERSION=sha-${GITHUB_SHA::7};;
           esac
-          TAGS=()
-          for image in $DOCKER_IMAGES; do
-            TAGS+=("${image}:${VERSION}")
-            if [[ "${{ github.event.repository.default_branch }}" == "$VERSION" ]]; then
-              TAGS+=("${image}:latest")
-            fi
-          done
-          echo ::set-output name=version::${VERSION}
-          echo ::set-output name=commit_hash::${GITHUB_SHA}
-          echo ::set-output name=gitref::${GITHUB_REF#refs/heads/}
-          echo ::set-output name=commit_date::$(git show -s --format=%cI)
-          echo ::set-output name=build_date::$(date +'%Y-%m-%dT%H:%M:%S')
-          echo ::set-output name=tags::$(IFS=,; echo "${TAGS[*]}")
-      # note: golangci-lint caches go mod
-      - name: Lint
-        uses: golangci/golangci-lint-action@v3
-        with:
-          version: v1.49.0
-      - name: Unit test
-        run: make test
-      - name: Build
-        run:
-          make release-binary
-        env:
-          BUILD_DATE: ${{ steps.buildinfo.outputs.build_date }}
-          COMMIT_DATE: ${{ steps.buildinfo.outputs.commit_date }}
-          COMMIT_HASH: ${{ steps.buildinfo.outputs.commit_hash }}
-          GIT_REF: ${{ steps.buildinfo.outputs.gitref }}
-
-      # Following jobs will be executed only when the event name is 'push'
+          echo "build_version=${VERSION}" >> $GITHUB_ENV
+          echo "build_target=${target}" >> $GITHUB_ENV
+          echo "build_gitref=${GITHUB_REF#refs/heads/}" >> $GITHUB_ENV
+          echo "build_commit_date=$(git show -s --format=%cI)" >> $GITHUB_ENV
+          echo "build_date=$(date +'%Y-%m-%dT%H:%M:%S')" >> $GITHUB_ENV
+          echo "build_image_repo=ghcr.io/${{ github.repository }}" >> $GITHUB_ENV
+          echo "build_image=ghcr.io/${{ github.repository }}:${VERSION}" >> $GITHUB_ENV
       - name: Set up QEMU
         id: qemu
-        if: github.event_name == 'push'
         uses: docker/setup-qemu-action@v2
         with:
-          image: tonistiigi/binfmt:latest
           platforms: all
       - name: Set up Docker Buildx
         id: buildx
-        if: github.event_name == 'push'
         uses: docker/setup-buildx-action@v2
-        with:
-          install: true
-          version: latest
-      - name: Cache Docker layers
-        if: github.event_name == 'push'
-        uses: actions/cache@v2
-        with:
-          path: /tmp/.buildx-cache
-          key: ${{ runner.os }}-buildx-${{ github.sha }}
-          restore-keys: |
-            ${{ runner.os }}-buildx-
-      - name: Docker Login
-        if: github.event_name == 'push'
+      - name: Docker Login (GitHub)
         uses: docker/login-action@v2
         with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
       - name: Build and Push
-        if: github.event_name == 'push'
-        id: docker_build
         uses: docker/build-push-action@v3
         with:
           context: .
           push: true
-          cache-from: type=local,src=/tmp/.buildx-cache
-          cache-to: type=local,mode=max,dest=/tmp/.buildx-cache-new
-          platforms: linux/amd64 #,linux/arm/v7,linux/arm64
-          tags: ${{ steps.buildinfo.outputs.tags }}
+          #cache-from: type=local,src=/tmp/.buildx-cache
+          #cache-to: type=local,mode=max,dest=/tmp/.buildx-cache-new
+          platforms: ${{ env.build_target }}
+          tags: ${{ env.build_image }}
           build-args: |
-            VERSION=${{ steps.buildinfo.outputs.version }}
-            COMMIT_HASH=${{ steps.buildinfo.outputs.commit_hash }}
-            BUILD_DATE=${{ steps.buildinfo.outputs.build_date }}
+            APP_VERSION=${{ env.build_version }}
+            COMMIT_HASH=${{ github.sha }}
+            COMMIT_DATE=${{ env.build_commit_date }}
+            BUILD_DATE=${{ env.build_date }}
+            GIT_REF=${{ env.build_gitref }}
+            BUILD_BY=github-actions
           labels: |
             org.opencontainers.image.title=${{ github.event.repository.name }}
             org.opencontainers.image.description=${{ github.event.repository.description }}
             org.opencontainers.image.url=${{ github.event.repository.html_url }}
             org.opencontainers.image.source=${{ github.event.repository.clone_url }}
-            org.opencontainers.image.version=${{ steps.buildinfo.outputs.version }}
-            org.opencontainers.image.created=${{ steps.buildinfo.outputs.build_date }}
+            org.opencontainers.image.version=${{ env.build_version }}
+            org.opencontainers.image.created=${{ env.build_date }}
             org.opencontainers.image.revision=${{ github.sha }}
             org.opencontainers.image.licenses=${{ github.event.repository.license.spdx_id }}
             org.opencontainers.image.documentation=https://identity-manager.io/
-      - name: Move cache
-        if: github.event_name == 'push'
-        run: |
-          rm -rf /tmp/.buildx-cache
-          mv /tmp/.buildx-cache-new /tmp/.buildx-cache

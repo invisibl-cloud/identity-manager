@@ -1,19 +1,26 @@
-FROM golang:1.19 as builder
-WORKDIR /app
+# Build
+FROM golang:1.19.1-alpine3.15 AS builder
 ARG TARGETOS
 ARG TARGETARCH
 ARG TARGETVARIANT=""
-ARG GOPROXY
-ARG BUILD_DATE
+ARG APP_VERSION
 ARG COMMIT_HASH
-ARG VERSION
-ARG CGO_ENABLED="0"
-ENV GOOS=${TARGETOS} GOARCH=${TARGETARCH} GOARM=${TARGETVARIANT}
+ARG GIT_REF
+ARG BUILD_DATE
+ARG BUILD_BY=docker
+ARG GOPROXY
+RUN apk add --no-cache --update ca-certificates git
+ENV CGO_ENABLED=0 GO111MODULE=on GOOS=${TARGETOS} GOARCH=${TARGETARCH} GOARM=${TARGETVARIANT}
+WORKDIR /app
 COPY go.mod go.sum ./
 RUN go mod download
 COPY . .
-RUN make release-binary
+RUN go build -ldflags "-s -w -X main.version=${APP_VERSION} -X main.commit=${COMMIT_HASH} -X main.date=${BUILD_DATE} -linkmode internal -extldflags -static" -o identity-manager main.go
 
+# Image
 FROM gcr.io/distroless/static-debian11:nonroot
-WORKDIR /app
+#COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
+# Copy module files for CVE scanning / dependency analysis.
+COPY --from=builder /app/go.mod /app/go.sum /app/
+COPY --from=builder /app/identity-manager /app/
 ENTRYPOINT ["/app/identity-manager"]

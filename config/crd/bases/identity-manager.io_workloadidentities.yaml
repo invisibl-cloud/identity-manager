@@ -363,6 +363,11 @@ spec:
                 - AWS
                 - Azure
                 type: string
+              tags:
+                additionalProperties:
+                  type: string
+                description: Tags of WorkloadIdentity
+                type: object
               writeToSecretRef:
                 description: WriteToSecretRef is a reference to a secret
                 properties:
