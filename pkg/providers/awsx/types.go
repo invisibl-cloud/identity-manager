@@ -1,4 +1,5 @@
-//go:generate mockery --name IAM --name STS
+//go:generate mockery --name IAM
+//go:generate mockery --name STS
 package awsx
 
 import (
@@ -22,6 +23,7 @@ type IAM interface {
 	PutRolePolicy(*iam.PutRolePolicyInput) (*iam.PutRolePolicyOutput, error)
 	PutRolePermissionsBoundary(input *iam.PutRolePermissionsBoundaryInput) (*iam.PutRolePermissionsBoundaryOutput, error)
 	DeleteRolePermissionsBoundary(input *iam.DeleteRolePermissionsBoundaryInput) (*iam.DeleteRolePermissionsBoundaryOutput, error)
+	TagRole(input *iam.TagRoleInput) (*iam.TagRoleOutput, error)
 }
 
 // STS is the interface for the STS API calls

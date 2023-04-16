@@ -247,6 +247,29 @@ func (_m *IAM) PutRolePolicy(_a0 *iam.PutRolePolicyInput) (*iam.PutRolePolicyOut
 	return r0, r1
 }
 
+// TagRole provides a mock function with given fields: input
+func (_m *IAM) TagRole(input *iam.TagRoleInput) (*iam.TagRoleOutput, error) {
+	ret := _m.Called(input)
+
+	var r0 *iam.TagRoleOutput
+	if rf, ok := ret.Get(0).(func(*iam.TagRoleInput) *iam.TagRoleOutput); ok {
+		r0 = rf(input)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*iam.TagRoleOutput)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(*iam.TagRoleInput) error); ok {
+		r1 = rf(input)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // UpdateAssumeRolePolicy provides a mock function with given fields: _a0
 func (_m *IAM) UpdateAssumeRolePolicy(_a0 *iam.UpdateAssumeRolePolicyInput) (*iam.UpdateAssumeRolePolicyOutput, error) {
 	ret := _m.Called(_a0)
