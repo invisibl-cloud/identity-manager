@@ -25,6 +25,9 @@ type WorkloadIdentitySpec struct {
 	// Name of the WorkloadIdentity
 	// +optional
 	Name string `json:"name,omitempty"`
+	// DisplayName of the WorkloadIdentity
+	// +optional
+	DisplayName string `json:"displayName,omitempty"`
 	// Desc of the WorkloadIdentity
 	// +optional
 	Description string `json:"description,omitempty"`
@@ -32,7 +35,6 @@ type WorkloadIdentitySpec struct {
 	// +optional
 	Credentials *Credentials `json:"credentials,omitempty"`
 	// Provider of the WorkloadIdentity
-	// +kubebuilder:validation:Enum=AWS;Azure
 	// +required
 	Provider Provider `json:"provider"`
 	// AWS WorkloadIdentity
@@ -41,6 +43,9 @@ type WorkloadIdentitySpec struct {
 	// Azure WorkloadIdentity
 	// +optional
 	Azure *WorkloadIdentityAzure `json:"azure,omitempty"`
+	// GCP WorkloadIdentity
+	// +optional
+	GCP *WorkloadIdentityGCP `json:"gcp,omitempty"`
 	// WriteToSecretRef is a reference to a secret
 	// +optional
 	WriteToSecretRef *WriteToSecretRef `json:"writeToSecretRef,omitempty"`
@@ -63,6 +68,7 @@ type WriteToSecretRef struct {
 }
 
 // Provider defines the cloud provider of the WorkloadIdentity
+// +kubebuilder:validation:Enum=AWS;Azure;GCP
 type Provider string
 
 const (
@@ -70,6 +76,8 @@ const (
 	ProviderAWS Provider = "AWS"
 	// ProviderAzure is the Azure provider.
 	ProviderAzure Provider = "Azure"
+	// ProviderGCP is the GCP provider.
+	ProviderGCP Provider = "GCP"
 )
 
 // A CredentialsSource is a source from which provider credentials may be
@@ -104,6 +112,59 @@ type SecretRef struct {
 	// Name of the secret.
 	// +required
 	Name string `json:"name"`
+}
+
+// WorkloadIdentityGCP is the Provider spec for ProviderGCP
+type WorkloadIdentityGCP struct {
+	// Roles to be assigned
+	// +optional
+	Roles []string `json:"roles,omitempty"`
+	// CustomRoles to be assigned
+	// +optional
+	CustomRoles []GCPCustomRole `json:"customRoles,omitempty"`
+	// ServiceAccounts to be managed
+	// +optional
+	ServiceAccounts []*ServiceAccount `json:"serviceAccounts,omitempty"`
+	// Pods to be managed
+	// +optional
+	Pods []*PodSelector `json:"pods,omitempty"`
+}
+
+// GCPCustomRole defines Custom Role in GCP
+type GCPCustomRole struct {
+	// Title of the Role
+	// +optional
+	Title string `json:"title,omitempty"`
+	// Desc of the Role
+	// +optional
+	Desc string `json:"desc,omitempty"`
+	// Permissions of the Role
+	// +optional
+	Permissions []string `json:"permissions,omitempty"`
+	// Stage of the Role
+	// +optional
+	Stage string `json:"stage,omitempty"`
+}
+
+// GCPExpr defines expr for Role
+type GCPExpr struct {
+	// Description: Optional. Description of the expression. This is a
+	// longer text which describes the expression, e.g. when hovered over it
+	// in a UI.
+	Description string `json:"description,omitempty"`
+
+	// Expression: Textual representation of an expression in Common
+	// Expression Language syntax.
+	Expression string `json:"expression,omitempty"`
+
+	// Location: Optional. String indicating the location of the expression
+	// for error reporting, e.g. a file name and a position in the file.
+	Location string `json:"location,omitempty"`
+
+	// Title: Optional. Title for the expression, i.e. a short string
+	// describing its purpose. This can be used e.g. in UIs which allow to
+	// enter the expression.
+	Title string `json:"title,omitempty"`
 }
 
 // WorkloadIdentityAzure is the Provider spec for ProviderAzure
@@ -237,19 +298,19 @@ type WorkloadIdentityAWS struct {
 	// Policies of the Role
 	// +optional
 	Policies []string `json:"policies,omitempty"`
-	// ServiceAccounts to be managed
-	// +optional
-	ServiceAccounts []*ServiceAccount `json:"serviceAccounts,omitempty"`
 	// PermissionsBoundaryARN of Role
 	// +optional
 	PermissionsBoundaryARN string `json:"permissionsBoundaryARN,omitempty"`
+	// ServiceAccounts to be managed
+	// +optional
+	ServiceAccounts []*ServiceAccount `json:"serviceAccounts,omitempty"`
 	// Pods to be managed
 	// +optional
-	Pods []*AwsRoleSpecPod `json:"pods,omitempty"`
+	Pods []*PodSelector `json:"pods,omitempty"`
 }
 
-// AwsRoleSpecPod defines the AWS's role spec pod
-type AwsRoleSpecPod struct {
+// PodSelector defines the pod selector
+type PodSelector struct {
 	metav1.LabelSelector `json:",inline"`
 	// Namespace of the Pod
 	// +optional

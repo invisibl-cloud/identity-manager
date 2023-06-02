@@ -100,3 +100,6 @@ provider:
   aws:
     enabled: false
     arn: ""
+  gcp:
+    enabled: false
+    gsa: ""

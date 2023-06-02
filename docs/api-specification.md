@@ -10,48 +10,6 @@
 </p>
 Resource Types:
 <ul></ul>
-<h3 id="identity-manager.io/v1alpha1.AwsRoleSpecPod">AwsRoleSpecPod
-</h3>
-<p>
-<p>AwsRoleSpecPod defines the AWS&rsquo;s role spec pod</p>
-</p>
-<table>
-<thead>
-<tr>
-<th>Field</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>
-<code>LabelSelector</code></br>
-<em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#labelselector-v1-meta">
-Kubernetes meta/v1.LabelSelector
-</a>
-</em>
-</td>
-<td>
-<p>
-(Members of <code>LabelSelector</code> are embedded into this type.)
-</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>namespace</code></br>
-<em>
-string
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>Namespace of the Pod</p>
-</td>
-</tr>
-</tbody>
-</table>
 <h3 id="identity-manager.io/v1alpha1.AzureIdentity">AzureIdentity
 </h3>
 <p>
@@ -564,6 +522,138 @@ string
 </tr>
 </tbody>
 </table>
+<h3 id="identity-manager.io/v1alpha1.GCPCustomRole">GCPCustomRole
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#identity-manager.io/v1alpha1.WorkloadIdentityGCP">WorkloadIdentityGCP</a>)
+</p>
+<p>
+<p>GCPCustomRole defines Custom Role in GCP</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>title</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Title of the Role</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>desc</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Desc of the Role</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>permissions</code></br>
+<em>
+[]string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Permissions of the Role</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>stage</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Stage of the Role</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="identity-manager.io/v1alpha1.GCPExpr">GCPExpr
+</h3>
+<p>
+<p>GCPExpr defines expr for Role</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>description</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>Description: Optional. Description of the expression. This is a
+longer text which describes the expression, e.g. when hovered over it
+in a UI.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>expression</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>Expression: Textual representation of an expression in Common
+Expression Language syntax.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>location</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>Location: Optional. String indicating the location of the expression
+for error reporting, e.g. a file name and a position in the file.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>title</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>Title: Optional. Title for the expression, i.e. a short string
+describing its purpose. This can be used e.g. in UIs which allow to
+enter the expression.</p>
+</td>
+</tr>
+</tbody>
+</table>
 <h3 id="identity-manager.io/v1alpha1.Metadata">Metadata
 </h3>
 <p>
@@ -632,6 +722,48 @@ map[string]string
 </tr>
 </tbody>
 </table>
+<h3 id="identity-manager.io/v1alpha1.PodSelector">PodSelector
+</h3>
+<p>
+<p>PodSelector defines the pod selector</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>LabelSelector</code></br>
+<em>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#labelselector-v1-meta">
+Kubernetes meta/v1.LabelSelector
+</a>
+</em>
+</td>
+<td>
+<p>
+(Members of <code>LabelSelector</code> are embedded into this type.)
+</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>namespace</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Namespace of the Pod</p>
+</td>
+</tr>
+</tbody>
+</table>
 <h3 id="identity-manager.io/v1alpha1.Provider">Provider
 (<code>string</code> alias)</p></h3>
 <p>
@@ -653,6 +785,9 @@ map[string]string
 </td>
 </tr><tr><td><p>&#34;Azure&#34;</p></td>
 <td><p>ProviderAzure is the Azure provider.</p>
+</td>
+</tr><tr><td><p>&#34;GCP&#34;</p></td>
+<td><p>ProviderGCP is the GCP provider.</p>
 </td>
 </tr></tbody>
 </table>
@@ -1050,6 +1185,88 @@ map[string]string
 </td>
 </tr></tbody>
 </table>
+<h3 id="identity-manager.io/v1alpha1.SyncKey">SyncKey
+</h3>
+<p>
+<p>SyncKey is the sync key&rsquo;s definition</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>source</code></br>
+<em>
+<a href="#identity-manager.io/v1alpha1.SyncKeySource">
+SyncKeySource
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Source of the sync key</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>params</code></br>
+<em>
+map[string]string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Parameters of the sync key</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>writeToSecretRef</code></br>
+<em>
+<a href="#identity-manager.io/v1alpha1.WriteToSecretRef">
+WriteToSecretRef
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>WriteToSecretRef is a reference to a secret</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="identity-manager.io/v1alpha1.SyncKeySource">SyncKeySource
+(<code>string</code> alias)</p></h3>
+<p>
+(<em>Appears on:</em>
+<a href="#identity-manager.io/v1alpha1.SyncKey">SyncKey</a>)
+</p>
+<p>
+<p>A SyncKeySource indicates type of the azure resource keys to synced</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Value</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr><td><p>&#34;Cosmos&#34;</p></td>
+<td><p>SyncKeySourceCosmos indicates azure resource type cosmos</p>
+</td>
+</tr><tr><td><p>&#34;&#34;</p></td>
+<td><p>SyncKeySourceDefault indicates no resource type</p>
+</td>
+</tr><tr><td><p>&#34;Storage&#34;</p></td>
+<td><p>SyncKeySourceStorage indicates azure resource type storage</p>
+</td>
+</tr></tbody>
+</table>
 <h3 id="identity-manager.io/v1alpha1.WorkloadIdentity">WorkloadIdentity
 </h3>
 <p>
@@ -1100,6 +1317,18 @@ string
 <td>
 <em>(Optional)</em>
 <p>Name of the WorkloadIdentity</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>displayName</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>DisplayName of the WorkloadIdentity</p>
 </td>
 </tr>
 <tr>
@@ -1171,6 +1400,20 @@ WorkloadIdentityAzure
 </tr>
 <tr>
 <td>
+<code>gcp</code></br>
+<em>
+<a href="#identity-manager.io/v1alpha1.WorkloadIdentityGCP">
+WorkloadIdentityGCP
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>GCP WorkloadIdentity</p>
+</td>
+</tr>
+<tr>
+<td>
 <code>writeToSecretRef</code></br>
 <em>
 <a href="#identity-manager.io/v1alpha1.WriteToSecretRef">
@@ -1181,6 +1424,18 @@ WriteToSecretRef
 <td>
 <em>(Optional)</em>
 <p>WriteToSecretRef is a reference to a secret</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>tags</code></br>
+<em>
+map[string]string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Tags of WorkloadIdentity</p>
 </td>
 </tr>
 </table>
@@ -1278,6 +1533,18 @@ map[string]string
 </tr>
 <tr>
 <td>
+<code>permissionsBoundaryARN</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>PermissionsBoundaryARN of Role</p>
+</td>
+</tr>
+<tr>
+<td>
 <code>serviceAccounts</code></br>
 <em>
 <a href="#identity-manager.io/v1alpha1.*github.com/invisibl-cloud/identity-manager/api/v1alpha1.ServiceAccount">
@@ -1294,8 +1561,8 @@ map[string]string
 <td>
 <code>pods</code></br>
 <em>
-<a href="#identity-manager.io/v1alpha1.*github.com/invisibl-cloud/identity-manager/api/v1alpha1.AwsRoleSpecPod">
-[]*github.com/invisibl-cloud/identity-manager/api/v1alpha1.AwsRoleSpecPod
+<a href="#identity-manager.io/v1alpha1.*github.com/invisibl-cloud/identity-manager/api/v1alpha1.PodSelector">
+[]*github.com/invisibl-cloud/identity-manager/api/v1alpha1.PodSelector
 </a>
 </em>
 </td>
@@ -1379,6 +1646,93 @@ AzureIdentityBinding
 <p>IdentityBinding of the WorkloadIdentity</p>
 </td>
 </tr>
+<tr>
+<td>
+<code>syncKeys</code></br>
+<em>
+<a href="#identity-manager.io/v1alpha1.*github.com/invisibl-cloud/identity-manager/api/v1alpha1.SyncKey">
+[]*github.com/invisibl-cloud/identity-manager/api/v1alpha1.SyncKey
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>SyncKeys of the WorkloadIdentity</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="identity-manager.io/v1alpha1.WorkloadIdentityGCP">WorkloadIdentityGCP
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#identity-manager.io/v1alpha1.WorkloadIdentitySpec">WorkloadIdentitySpec</a>)
+</p>
+<p>
+<p>WorkloadIdentityGCP is the Provider spec for ProviderGCP</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>roles</code></br>
+<em>
+[]string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Roles to be assigned</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>customRoles</code></br>
+<em>
+<a href="#identity-manager.io/v1alpha1.GCPCustomRole">
+[]GCPCustomRole
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>CustomRoles to be assigned</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>serviceAccounts</code></br>
+<em>
+<a href="#identity-manager.io/v1alpha1.*github.com/invisibl-cloud/identity-manager/api/v1alpha1.ServiceAccount">
+[]*github.com/invisibl-cloud/identity-manager/api/v1alpha1.ServiceAccount
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>ServiceAccounts to be managed</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>pods</code></br>
+<em>
+<a href="#identity-manager.io/v1alpha1.*github.com/invisibl-cloud/identity-manager/api/v1alpha1.PodSelector">
+[]*github.com/invisibl-cloud/identity-manager/api/v1alpha1.PodSelector
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Pods to be managed</p>
+</td>
+</tr>
 </tbody>
 </table>
 <h3 id="identity-manager.io/v1alpha1.WorkloadIdentitySpec">WorkloadIdentitySpec
@@ -1408,6 +1762,18 @@ string
 <td>
 <em>(Optional)</em>
 <p>Name of the WorkloadIdentity</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>displayName</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>DisplayName of the WorkloadIdentity</p>
 </td>
 </tr>
 <tr>
@@ -1479,6 +1845,20 @@ WorkloadIdentityAzure
 </tr>
 <tr>
 <td>
+<code>gcp</code></br>
+<em>
+<a href="#identity-manager.io/v1alpha1.WorkloadIdentityGCP">
+WorkloadIdentityGCP
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>GCP WorkloadIdentity</p>
+</td>
+</tr>
+<tr>
+<td>
 <code>writeToSecretRef</code></br>
 <em>
 <a href="#identity-manager.io/v1alpha1.WriteToSecretRef">
@@ -1489,6 +1869,18 @@ WriteToSecretRef
 <td>
 <em>(Optional)</em>
 <p>WriteToSecretRef is a reference to a secret</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>tags</code></br>
+<em>
+map[string]string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Tags of WorkloadIdentity</p>
 </td>
 </tr>
 </tbody>
@@ -1583,6 +1975,7 @@ string
 </h3>
 <p>
 (<em>Appears on:</em>
+<a href="#identity-manager.io/v1alpha1.SyncKey">SyncKey</a>, 
 <a href="#identity-manager.io/v1alpha1.WorkloadIdentitySpec">WorkloadIdentitySpec</a>)
 </p>
 <p>

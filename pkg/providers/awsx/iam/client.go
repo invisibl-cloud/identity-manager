@@ -140,6 +140,9 @@ func (i *Client) getTags(awsRole *iam.Role) ([]*iam.Tag, bool) {
 	}
 	if len(i.role.Spec.Tags) > 0 {
 		for k, v := range i.role.Spec.Tags {
+			if i.options.TagPrefix != "" {
+				k = i.options.TagPrefix + k
+			}
 			tmap[k] = v
 			tkeys = append(tkeys, k)
 		}

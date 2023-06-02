@@ -10,8 +10,10 @@ import (
 	"github.com/invisibl-cloud/identity-manager/api/v1alpha1"
 	"github.com/invisibl-cloud/identity-manager/pkg/consts"
 	"github.com/invisibl-cloud/identity-manager/pkg/types"
+	"github.com/invisibl-cloud/identity-manager/pkg/util"
 	"k8s.io/apimachinery/pkg/api/equality"
 	"k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -72,13 +74,11 @@ func (r *reconciler) Reconcile(ctx context.Context) (ctrl.Result, error) {
 		return r.doDelete(ctx)
 	}
 	// Add finalizer to control object deletion
-	switch r.res.GetObjectKind().GroupVersionKind().Kind {
-	case "Dependency":
-		controllerutil.RemoveFinalizer(r.res, consts.FinalizerKey)
-	default:
-		if !controllerutil.ContainsFinalizer(r.res, consts.FinalizerKey) {
-			controllerutil.AddFinalizer(r.res, consts.FinalizerKey)
-		}
+	if !controllerutil.ContainsFinalizer(r.res, consts.FinalizerKey) {
+		controllerutil.AddFinalizer(r.res, consts.FinalizerKey)
+	}
+	if CanIgnore(r.res) {
+		return ctrl.Result{}, nil
 	}
 	return r.doReconcile(ctx)
 }
@@ -89,9 +89,9 @@ func (r *reconciler) doDelete(ctx context.Context) (ctrl.Result, error) {
 		return ctrl.Result{}, nil
 	}
 	// if reconciler off, return
-	//if CanIgnore(r.res) {
-	//	return r.removeFinalizer(ctx)
-	//}
+	if CanIgnore(r.res) {
+		return r.removeFinalizer(ctx)
+	}
 	// if marked as orphan, return
 	isOrphan := r.res.GetAnnotations()[consts.DeletePolicyKey] == consts.OrphanValue
 	if isOrphan {
@@ -136,20 +136,20 @@ func (r *reconciler) getRequeueAfter(requeueAfter time.Duration) time.Duration {
 	if requeueAfter > 0 {
 		return requeueAfter
 	}
-	min := 30
-	max := 120
-	secs, err := rand.Int(rand.Reader, big.NewInt(int64(max)))
+	min := int64(120) // 2min
+	max := int64(240) // 4min
+	secs, err := rand.Int(rand.Reader, big.NewInt(max-min))
 	if err != nil {
 		return time.Duration(min) * time.Second
 	}
-	return time.Duration(secs.Int64()) * time.Second
+	return time.Duration(secs.Int64()+min) * time.Second
 }
 
 func (r *reconciler) isResourceUpdated(spec any) bool {
 	return !equality.Semantic.DeepEqual(r.resCopy.GetAnnotations(), r.res.GetAnnotations()) ||
 		!equality.Semantic.DeepEqual(r.resCopy.GetLabels(), r.res.GetLabels()) ||
-		!equality.Semantic.DeepEqual(r.resCopy.GetFinalizers(), r.res.GetFinalizers()) ||
-		!equality.Semantic.DeepEqual(r.specCopy, spec)
+		!equality.Semantic.DeepEqual(r.resCopy.GetFinalizers(), r.res.GetFinalizers()) //||
+	//!equality.Semantic.DeepEqual(r.specCopy, spec)
 }
 
 // requeueAfter = -1 => no requeue
@@ -202,3 +202,24 @@ func (r *reconciler) doStatus(ctx context.Context, err error) (ctrl.Result, erro
 	}
 	return r.doReturn(ctx, 0)
 }
+
+// CanIgnore checks whether reconciler annotation is set to off.
+func CanIgnore(o metav1.Object) bool {
+	a := o.GetAnnotations()
+	if a == nil {
+		return false
+	}
+	reconciler, ok := a[ReconcilerKey]
+	if ok {
+		return util.Contains(falseValues, reconciler)
+	}
+	return false
+}
+
+var (
+	// trueValues  = []string{"true", "1", "enabled", "yes", "on", "enable", "active", "ok"}
+	falseValues = []string{"false", "0", "disabled", "no", "off", "disable", "inactive"}
+)
+
+// ReconcilerKey indicates reconciler annotation key
+const ReconcilerKey = "identity-manager.io/reconciler"
