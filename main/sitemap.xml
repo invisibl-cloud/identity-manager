@@ -2,47 +2,47 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     <url>
          <loc>https://identity-manager.io/main/</loc>
-         <lastmod>2023-04-16</lastmod>
+         <lastmod>2023-06-02</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://identity-manager.io/main/api-overview/</loc>
-         <lastmod>2023-04-16</lastmod>
+         <lastmod>2023-06-02</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://identity-manager.io/main/api-specification/</loc>
-         <lastmod>2023-04-16</lastmod>
+         <lastmod>2023-06-02</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://identity-manager.io/main/contributing-coc/</loc>
-         <lastmod>2023-04-16</lastmod>
+         <lastmod>2023-06-02</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://identity-manager.io/main/contributing-process/</loc>
-         <lastmod>2023-04-16</lastmod>
+         <lastmod>2023-06-02</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://identity-manager.io/main/developer-guide/</loc>
-         <lastmod>2023-04-16</lastmod>
+         <lastmod>2023-06-02</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://identity-manager.io/main/guides-getting-started/</loc>
-         <lastmod>2023-04-16</lastmod>
+         <lastmod>2023-06-02</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://identity-manager.io/main/guides-introduction/</loc>
-         <lastmod>2023-04-16</lastmod>
+         <lastmod>2023-06-02</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://identity-manager.io/main/guides-quick-start/</loc>
-         <lastmod>2023-04-16</lastmod>
+         <lastmod>2023-06-02</lastmod>
          <changefreq>daily</changefreq>
     </url>
 </urlset>
