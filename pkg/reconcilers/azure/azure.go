@@ -38,8 +38,8 @@ type IdentityReconciler struct {
 	msi   *msi.Client
 }
 
-// NewIdentityReconciler initializes IdentityReconciler
-func NewIdentityReconciler(base *reconcilers.ReconcilerBase, res *v1alpha1.WorkloadIdentity) *IdentityReconciler {
+// NewReconciler initializes IdentityReconciler
+func NewReconciler(base *reconcilers.ReconcilerBase, res *v1alpha1.WorkloadIdentity) *IdentityReconciler {
 	return &IdentityReconciler{
 		Client: base.Client(),
 		scheme: base.Scheme(),

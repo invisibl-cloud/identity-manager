@@ -1,8 +1,10 @@
+---
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.9.2
+    controller-gen.kubebuilder.io/version: v0.11.1
+  creationTimestamp: null
   name: workloadidentities.identity-manager.io
 spec:
   group: identity-manager.io
@@ -58,7 +60,7 @@ spec:
                   pods:
                     description: Pods to be managed
                     items:
-                      description: AwsRoleSpecPod defines the AWS's role spec pod
+                      description: PodSelector defines the pod selector
                       properties:
                         matchExpressions:
                           description: matchExpressions is a list of label selector
@@ -352,6 +354,114 @@ spec:
               description:
                 description: Desc of the WorkloadIdentity
                 type: string
+              displayName:
+                description: DisplayName of the WorkloadIdentity
+                type: string
+              gcp:
+                description: GCP WorkloadIdentity
+                properties:
+                  customRoles:
+                    description: CustomRoles to be assigned
+                    items:
+                      description: GCPCustomRole defines Custom Role in GCP
+                      properties:
+                        desc:
+                          description: Desc of the Role
+                          type: string
+                        permissions:
+                          description: Permissions of the Role
+                          items:
+                            type: string
+                          type: array
+                        stage:
+                          description: Stage of the Role
+                          type: string
+                        title:
+                          description: Title of the Role
+                          type: string
+                      type: object
+                    type: array
+                  pods:
+                    description: Pods to be managed
+                    items:
+                      description: PodSelector defines the pod selector
+                      properties:
+                        matchExpressions:
+                          description: matchExpressions is a list of label selector
+                            requirements. The requirements are ANDed.
+                          items:
+                            description: A label selector requirement is a selector
+                              that contains values, a key, and an operator that relates
+                              the key and values.
+                            properties:
+                              key:
+                                description: key is the label key that the selector
+                                  applies to.
+                                type: string
+                              operator:
+                                description: operator represents a key's relationship
+                                  to a set of values. Valid operators are In, NotIn,
+                                  Exists and DoesNotExist.
+                                type: string
+                              values:
+                                description: values is an array of string values.
+                                  If the operator is In or NotIn, the values array
+                                  must be non-empty. If the operator is Exists or
+                                  DoesNotExist, the values array must be empty. This
+                                  array is replaced during a strategic merge patch.
+                                items:
+                                  type: string
+                                type: array
+                            required:
+                            - key
+                            - operator
+                            type: object
+                          type: array
+                        matchLabels:
+                          additionalProperties:
+                            type: string
+                          description: matchLabels is a map of {key,value} pairs.
+                            A single {key,value} in the matchLabels map is equivalent
+                            to an element of matchExpressions, whose key field is
+                            "key", the operator is "In", and the values array contains
+                            only "value". The requirements are ANDed.
+                          type: object
+                        namespace:
+                          description: Namespace of the Pod
+                          type: string
+                      type: object
+                      x-kubernetes-map-type: atomic
+                    type: array
+                  roles:
+                    description: Roles to be assigned
+                    items:
+                      type: string
+                    type: array
+                  serviceAccounts:
+                    description: ServiceAccounts to be managed
+                    items:
+                      description: ServiceAccount defines the service account's metadata
+                      properties:
+                        Annotations:
+                          additionalProperties:
+                            type: string
+                          description: Annotations to be added on ServiceAccount
+                          type: object
+                        action:
+                          description: Action to be perform on ServiceAccount
+                          enum:
+                          - Update
+                          - Create
+                          type: string
+                        name:
+                          description: Name of the ServiceAccount
+                          type: string
+                        namespace:
+                          description: Namespace of the ServiceAccount
+                          type: string
+                      type: object
+                    type: array
+                type: object
               name:
                 description: Name of the WorkloadIdentity
                 type: string
@@ -360,6 +470,7 @@ spec:
                 enum:
                 - AWS
                 - Azure
+                - GCP
                 type: string
               tags:
                 additionalProperties:

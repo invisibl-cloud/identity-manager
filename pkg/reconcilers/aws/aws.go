@@ -3,12 +3,15 @@ package aws
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
+	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/service/iam"
 	"github.com/aws/aws-sdk-go/service/sts"
 
 	"github.com/invisibl-cloud/identity-manager/api/v1alpha1"
+	"github.com/invisibl-cloud/identity-manager/pkg/consts"
 	"github.com/invisibl-cloud/identity-manager/pkg/options"
 	"github.com/invisibl-cloud/identity-manager/pkg/providers/awsx"
 	iamc "github.com/invisibl-cloud/identity-manager/pkg/providers/awsx/iam"
@@ -27,7 +30,7 @@ import (
 // specific duration is needed
 var DefaultDuration = time.Duration(60) * time.Second
 
-const eksServiceAccountAnnotationKey = "eks.amazonaws.com/role-arn"
+const serviceAccountAnnotationKey = "eks.amazonaws.com/role-arn"
 const roleLabelKey = "identity-manager.io/name"
 const managedByLabelKey = "identity-manager.io"
 const managedByValueKey = "managed"
@@ -36,6 +39,7 @@ const managedByValueKey = "managed"
 // required fields that are need to reconcile
 type RoleReconciler struct {
 	client.Client
+	base    *reconcilers.ReconcilerBase
 	scheme  *runtime.Scheme
 	options *options.Options
 	res     *v1alpha1.WorkloadIdentity
@@ -43,10 +47,11 @@ type RoleReconciler struct {
 	iamClient *iamc.Client
 }
 
-// NewRoleReconciler expectes reconciler base and workload identity resource
+// NewReconciler expectes reconciler base and workload identity resource
 // and returns a new RoleReconciler object
-func NewRoleReconciler(base *reconcilers.ReconcilerBase, res *v1alpha1.WorkloadIdentity) *RoleReconciler {
+func NewReconciler(base *reconcilers.ReconcilerBase, res *v1alpha1.WorkloadIdentity) *RoleReconciler {
 	return &RoleReconciler{
+		base:    base,
 		Client:  base.Client(),
 		scheme:  base.Scheme(),
 		res:     res,
@@ -119,10 +124,31 @@ func (r *RoleReconciler) Reconcile(ctx context.Context) error {
 	return r.doActions(ctx)
 }
 
+func (r *RoleReconciler) normalizeError(ctx context.Context, err error) error {
+	if aerr, ok := err.(awserr.Error); ok {
+		msg := aerr.Error()
+		if strings.HasPrefix(msg, "AccessDenied") {
+			r.base.Log(ctx).Info("aws error1", "err", err)
+			return fmt.Errorf("AccessDenied")
+		}
+		ix := strings.Index(msg, "request id:")
+		if ix > -1 {
+			r.base.Log(ctx).Info("aws error2", "err", err)
+			return fmt.Errorf(msg[0:ix])
+		}
+	}
+	return err
+}
+
 func (r *RoleReconciler) doIAMRoleReconcile(ctx context.Context) error {
+	importID := r.res.GetAnnotations()[consts.ImportKey]
+	if importID != "" {
+		r.res.Status.ID = importID
+		return nil
+	}
 	status, err := r.iamClient.CreateOrUpdate(ctx)
 	if err != nil {
-		return err
+		return r.normalizeError(ctx, err)
 	}
 	if status != nil && status.Name != "" && status.ARN != "" &&
 		(r.res.Status.Name != status.Name || r.res.Status.ID != status.ARN) {
@@ -134,9 +160,13 @@ func (r *RoleReconciler) doIAMRoleReconcile(ctx context.Context) error {
 
 // Finalize is the implementation of Finalizer
 func (r *RoleReconciler) Finalize(ctx context.Context) error {
+	importID := r.res.GetAnnotations()[consts.ImportKey]
+	if importID != "" {
+		return nil
+	}
 	err := r.iamClient.Delete(ctx)
 	if err != nil {
-		return err
+		return r.normalizeError(ctx, err)
 	}
 	return nil
 }
@@ -215,11 +245,11 @@ func (r *RoleReconciler) doServiceAccountReconcile(ctx context.Context, saSpec *
 		existingSA.Annotations = make(map[string]string)
 	}
 
-	if existingSA.Annotations[eksServiceAccountAnnotationKey] != arn {
+	if existingSA.Annotations[serviceAccountAnnotationKey] != arn {
 		if len(existingSA.Annotations) == 0 {
 			existingSA.Annotations = map[string]string{}
 		}
-		existingSA.Annotations[eksServiceAccountAnnotationKey] = arn
+		existingSA.Annotations[serviceAccountAnnotationKey] = arn
 		err = r.Update(ctx, existingSA)
 		if err != nil {
 			return ctrl.Result{}, err
@@ -229,7 +259,7 @@ func (r *RoleReconciler) doServiceAccountReconcile(ctx context.Context, saSpec *
 	return ctrl.Result{}, nil
 }
 
-func (r *RoleReconciler) restartPods(ctx context.Context, p *v1alpha1.AwsRoleSpecPod, arn string) error {
+func (r *RoleReconciler) restartPods(ctx context.Context, p *v1alpha1.PodSelector, arn string) error {
 	pods := &corev1.PodList{}
 	err := r.List(ctx, pods,
 		client.InNamespace(util.DefaultString(p.Namespace, r.res.Namespace)),
@@ -265,7 +295,7 @@ func (r *RoleReconciler) newServiceAccount(saName string, saNamespace string) (*
 			Name:        saName,
 			Namespace:   saNamespace,
 			Labels:      map[string]string{managedByLabelKey: managedByValueKey, roleLabelKey: r.res.Name},
-			Annotations: map[string]string{eksServiceAccountAnnotationKey: r.res.Status.ID},
+			Annotations: map[string]string{serviceAccountAnnotationKey: r.res.Status.ID},
 		},
 	}
 	// Set AwsRole instance as the owner and controller (for gc)

@@ -11,6 +11,7 @@ import (
 type Options struct {
 	Tags       flagx.MapFlag
 	NamePrefix string
+	TagPrefix  string
 	AWS        *awsx.Options
 }
 
@@ -21,7 +22,8 @@ func NewOptions() *Options {
 
 // BindFlags will parse the given flagset for reconciler flags.
 func (o *Options) BindFlags(fs *flag.FlagSet) {
-	flag.Var(&o.Tags, "tag", "The resource tags. format: key=value")
 	flag.StringVar(&o.NamePrefix, "name-prefix", "", "The resource name prefix.")
+	flag.StringVar(&o.TagPrefix, "tag-prefix", "", "The resource tag prefix. note: this will be applied only to spec.tags")
+	flag.Var(&o.Tags, "tag", "The resource tags. format: key=value")
 	o.AWS.BindFlags(fs)
 }

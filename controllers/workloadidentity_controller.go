@@ -26,6 +26,7 @@ import (
 	"github.com/invisibl-cloud/identity-manager/pkg/reconcilers"
 	"github.com/invisibl-cloud/identity-manager/pkg/reconcilers/aws"
 	"github.com/invisibl-cloud/identity-manager/pkg/reconcilers/azure"
+	"github.com/invisibl-cloud/identity-manager/pkg/reconcilers/gcp"
 	"github.com/invisibl-cloud/identity-manager/pkg/types"
 )
 
@@ -84,9 +85,11 @@ func (r *wiReconciler) Reconcile(ctx context.Context) error {
 	var rec wiReconcilerInterface
 	switch r.res.Spec.Provider {
 	case v1alpha1.ProviderAWS:
-		rec = aws.NewRoleReconciler(r.base, r.res)
+		rec = aws.NewReconciler(r.base, r.res)
 	case v1alpha1.ProviderAzure:
-		rec = azure.NewIdentityReconciler(r.base, r.res)
+		rec = azure.NewReconciler(r.base, r.res)
+	case v1alpha1.ProviderGCP:
+		rec = gcp.NewReconciler(r.base, r.res)
 	default:
 		return fmt.Errorf("unknown provider %s", r.res.Spec.Provider)
 	}
@@ -102,9 +105,11 @@ func (r *wiReconciler) Finalize(ctx context.Context) error {
 	var rec wiReconcilerInterface
 	switch r.res.Spec.Provider {
 	case v1alpha1.ProviderAWS:
-		rec = aws.NewRoleReconciler(r.base, r.res)
+		rec = aws.NewReconciler(r.base, r.res)
 	case v1alpha1.ProviderAzure:
-		rec = azure.NewIdentityReconciler(r.base, r.res)
+		rec = azure.NewReconciler(r.base, r.res)
+	case v1alpha1.ProviderGCP:
+		rec = gcp.NewReconciler(r.base, r.res)
 	default:
 		return nil
 	}

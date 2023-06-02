@@ -36,7 +36,7 @@ func getTestClient() (client.Client, error) {
 	}
 
 	var testEnv = &envtest.Environment{
-		CRDDirectoryPaths:     []string{filepath.Join("..", "..", "..", "config", "crd", "bases")},
+		CRDDirectoryPaths:     []string{filepath.Join("../../../" + os.Getenv("CRDS_DIR"))},
 		ErrorIfCRDPathMissing: true,
 	}
 	cfg, err := testEnv.Start()
@@ -345,7 +345,7 @@ func TestAWSReconcile(t *testing.T) {
 		sa, err := getServiceAccount(k8sClient, testCase.workloadIdentity.Spec.AWS.ServiceAccounts[0].Name, testCase.workloadIdentity.Spec.AWS.ServiceAccounts[0].Namespace)
 		assert.Nil(t, err)
 
-		assert.Equal(t, testCase.workloadIdentity.Status.ID, sa.Annotations[eksServiceAccountAnnotationKey])
+		assert.Equal(t, testCase.workloadIdentity.Status.ID, sa.Annotations[serviceAccountAnnotationKey])
 		assert.Equal(t, testCase.workloadIdentity.Spec.Name, testCase.workloadIdentity.Status.Name)
 
 		if testCase.workloadIdentity.Spec.AWS.ServiceAccounts[0].Action == v1alpha1.ServiceAccountActionCreate {

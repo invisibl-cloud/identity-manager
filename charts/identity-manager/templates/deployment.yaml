@@ -17,6 +17,9 @@ spec:
         {{- if .Values.provider.aws.enabled }}
         eks.amazonaws.com/role-arn: {{ .Values.provider.aws.arn }}
         {{- end }}
+        {{- if .Values.provider.gcp.enabled }}
+        iam.gke.io/gcp-service-account: {{ .Values.provider.gcp.gsa }}
+        {{- end }}
         {{- with .Values.podAnnotations }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
