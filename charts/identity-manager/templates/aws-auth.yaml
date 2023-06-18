@@ -1,0 +1,18 @@
+{{- if .Values.awsAuth.enabled }}
+apiVersion: identity-manager.io/v1alpha1
+kind: AWSAuth
+metadata:
+  name: aws-auth
+  namespace: kube-system
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+spec:
+  {{- with .Values.awsAuth.mapRoles }}
+  mapRoles:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- with .Values.awsAuth.mapUsers }}
+  mapUsers:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+{{- end }}

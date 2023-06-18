@@ -103,3 +103,6 @@ provider:
   gcp:
     enabled: false
     gsa: ""
+
+awsAuth:
+  enabled: true

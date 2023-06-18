@@ -11,11 +11,11 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           fetch-depth: 0
           submodules: recursive
-      - uses: actions/setup-python@v2
+      - uses: actions/setup-python@v4
         with:
           python-version: "3.8"
           architecture: x64
@@ -33,6 +33,15 @@ jobs:
             refs/tags/*)  VERSION=${GITHUB_REF#refs/tags/};;
             refs/heads/*) VERSION=$(echo ${GITHUB_REF#refs/heads/} | sed -r 's#/+#-#g');;
           esac
-          echo ::set-output name=version::${VERSION}
-      - name: Deploy
-        run: mike deploy -up ${{ steps.buildinfo.outputs.version }}
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+      - name: Deploy (main)
+        if: github.ref == 'refs/heads/main'
+        run: |
+          mike deploy -up ${{ steps.buildinfo.outputs.version }}
+          mike list
+      - name: Deploy (release)
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          mike deploy -up ${{ steps.buildinfo.outputs.version }}
+          mike set-default ${{ steps.buildinfo.outputs.version }}
+          mike list
