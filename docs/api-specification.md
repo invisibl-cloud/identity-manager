@@ -10,6 +10,168 @@
 </p>
 Resource Types:
 <ul></ul>
+<h3 id="identity-manager.io/v1alpha1.AWSAuth">AWSAuth
+</h3>
+<p>
+<p>AWSAuth is the Schema for the awsauths API</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>metadata</code></br>
+<em>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#objectmeta-v1-meta">
+Kubernetes meta/v1.ObjectMeta
+</a>
+</em>
+</td>
+<td>
+Refer to the Kubernetes API documentation for the fields of the
+<code>metadata</code> field.
+</td>
+</tr>
+<tr>
+<td>
+<code>spec</code></br>
+<em>
+<a href="#identity-manager.io/v1alpha1.AWSAuthSpec">
+AWSAuthSpec
+</a>
+</em>
+</td>
+<td>
+<br/>
+<br/>
+<table>
+<tr>
+<td>
+<code>mapRoles</code></br>
+<em>
+<a href="#identity-manager.io/v1alpha1.MapRoleItem">
+[]MapRoleItem
+</a>
+</em>
+</td>
+<td>
+<p>MapRoles holds a list of MapRoleItem</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>mapUsers</code></br>
+<em>
+<a href="#identity-manager.io/v1alpha1.MapUserItem">
+[]MapUserItem
+</a>
+</em>
+</td>
+<td>
+<p>MapUsers holds a list of MapUserItem</p>
+</td>
+</tr>
+</table>
+</td>
+</tr>
+<tr>
+<td>
+<code>status</code></br>
+<em>
+<a href="#identity-manager.io/v1alpha1.AWSAuthStatus">
+AWSAuthStatus
+</a>
+</em>
+</td>
+<td>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="identity-manager.io/v1alpha1.AWSAuthSpec">AWSAuthSpec
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#identity-manager.io/v1alpha1.AWSAuth">AWSAuth</a>)
+</p>
+<p>
+<p>AWSAuthSpec defines the desired state of AWSAuth</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>mapRoles</code></br>
+<em>
+<a href="#identity-manager.io/v1alpha1.MapRoleItem">
+[]MapRoleItem
+</a>
+</em>
+</td>
+<td>
+<p>MapRoles holds a list of MapRoleItem</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>mapUsers</code></br>
+<em>
+<a href="#identity-manager.io/v1alpha1.MapUserItem">
+[]MapUserItem
+</a>
+</em>
+</td>
+<td>
+<p>MapUsers holds a list of MapUserItem</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="identity-manager.io/v1alpha1.AWSAuthStatus">AWSAuthStatus
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#identity-manager.io/v1alpha1.AWSAuth">AWSAuth</a>)
+</p>
+<p>
+<p>AWSAuthStatus defines the observed state of AWSAuth</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>ConditionedStatus</code></br>
+<em>
+<a href="#identity-manager.io/v1alpha1.ConditionedStatus">
+ConditionedStatus
+</a>
+</em>
+</td>
+<td>
+<p>
+(Members of <code>ConditionedStatus</code> are embedded into this type.)
+</p>
+</td>
+</tr>
+</tbody>
+</table>
 <h3 id="identity-manager.io/v1alpha1.AzureIdentity">AzureIdentity
 </h3>
 <p>
@@ -367,6 +529,7 @@ Kubernetes resources that manage their lifecycle.</p>
 </h3>
 <p>
 (<em>Appears on:</em>
+<a href="#identity-manager.io/v1alpha1.AWSAuthStatus">AWSAuthStatus</a>, 
 <a href="#identity-manager.io/v1alpha1.WorkloadIdentityStatus">WorkloadIdentityStatus</a>)
 </p>
 <p>
@@ -650,6 +813,110 @@ string
 <p>Title: Optional. Title for the expression, i.e. a short string
 describing its purpose. This can be used e.g. in UIs which allow to
 enter the expression.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="identity-manager.io/v1alpha1.MapRoleItem">MapRoleItem
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#identity-manager.io/v1alpha1.AWSAuthSpec">AWSAuthSpec</a>)
+</p>
+<p>
+<p>MapRoleItem defines the mapRole item of AWSAuth</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>rolearn</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>The ARN of the IAM role to add</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>username</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>The user name within Kubernetes to map to the IAM role</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>groups</code></br>
+<em>
+[]string
+</em>
+</td>
+<td>
+<p>A list of groups within Kubernetes to which the role is mapped</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="identity-manager.io/v1alpha1.MapUserItem">MapUserItem
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#identity-manager.io/v1alpha1.AWSAuthSpec">AWSAuthSpec</a>)
+</p>
+<p>
+<p>MapUserItem defines the mapUser item of AWSAuth</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>userarn</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>The ARN of the IAM user to add</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>username</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>The user name within Kubernetes to map to the IAM user</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>groups</code></br>
+<em>
+[]string
+</em>
+</td>
+<td>
+<p>A list of groups within Kubernetes to which the user is mapped to</p>
 </td>
 </tr>
 </tbody>
