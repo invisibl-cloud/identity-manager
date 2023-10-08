@@ -3,6 +3,7 @@ package gcp
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/invisibl-cloud/identity-manager/api/v1alpha1"
 	"github.com/invisibl-cloud/identity-manager/pkg/providers/gcpx"
@@ -100,7 +101,17 @@ func (r *IdentityReconciler) doReconcile(ctx context.Context) error {
 	if r.res.Spec.GCP == nil {
 		return fmt.Errorf("missing gcp spec")
 	}
-	name := util.DefaultString(r.res.Spec.Name, r.res.Name)
+
+	// serviceAccount name
+	name := r.res.Status.Name
+	if name == "" {
+		name = util.DefaultString(r.res.Spec.Name, r.res.Name)
+		if len(name) > 30 {
+			uid := strings.ReplaceAll(string(r.res.UID), "-", "")
+			name = name[0:20] + uid[20:30]
+		}
+	}
+
 	id, err := r.iamx.EnsureServiceAccountWithRoles(ctx,
 		name,
 		r.res.Namespace,
@@ -117,6 +128,7 @@ func (r *IdentityReconciler) doReconcile(ctx context.Context) error {
 	if id != "" {
 		r.res.Status.ID = id
 	}
+	r.res.Status.Name = name
 	return r.doActions(ctx)
 }
 

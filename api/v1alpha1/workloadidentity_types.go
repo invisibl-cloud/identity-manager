@@ -415,6 +415,9 @@ type WorkloadIdentityStatus struct {
 
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
+//+kubebuilder:printcolumn:name="Provider",type="string",JSONPath=".spec.provider"
+//+kubebuilder:printcolumn:name="ID",type="string",JSONPath=".status.id"
+//+kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
 
 // WorkloadIdentity is the Schema for the workloadidentities API
 type WorkloadIdentity struct {

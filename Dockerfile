@@ -1,5 +1,5 @@
 # Build
-FROM golang:1.19.1-alpine3.15 AS builder
+FROM golang:1.21.0-alpine3.18 AS builder
 ARG TARGETOS
 ARG TARGETARCH
 ARG TARGETVARIANT=""

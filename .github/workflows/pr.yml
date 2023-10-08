@@ -16,11 +16,11 @@ jobs:
       - name: Install Go
         uses: actions/setup-go@v3
         with:
-          go-version: 1.19.x
+          go-version: 1.21.x
       # note: golangci-lint caches go mod
       - name: Lint
         uses: golangci/golangci-lint-action@v3
         with:
-          version: v1.49.0
+          version: v1.54.1
       - name: Unit test
         run: make test
